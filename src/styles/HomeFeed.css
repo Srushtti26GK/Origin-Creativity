@@ -1,0 +1,243 @@
+/* Feed post, used on Home and Profile.
+   Tokens are repeated here so it also works when LandingPage.css isn't loaded first. */
+
+.fpost {
+  --line: #d3c4b3;
+  --ink: #2b1d14;
+  --ink-soft: #7a6a5d;
+  --clay: #9a5b3a;
+  --paper-soft: #f8f0e6;
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+
+  margin-bottom: 1.75rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  font-family: var(--font-body);
+  box-shadow: 0 10px 24px rgb(80 50 25 / 0.08);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.fpost__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 1rem 1.1rem;
+}
+.fpost__repost-attribution {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0.7rem 1.1rem 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+.fpost__repost-attribution svg { flex: none; color: var(--clay); }
+.fpost__repost-attribution a { color: var(--ink); font-weight: 700; text-underline-offset: 2px; }
+.fpost__who {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.fpost__text { display: grid; min-width: 0; }
+.fpost__name { display: flex; align-items: center; gap: 0.35rem; font-weight: 700; }
+.fpost__verified { flex: none; color: var(--clay); }
+.fpost__meta {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fpost__edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+  min-height: 36px;
+  padding: 0 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.fpost__edit:hover { border-color: var(--ink); }
+
+.feed__pagination,
+.explore__pagination { display: grid; justify-items: center; gap: var(--space-3); margin: var(--space-5) 0; }
+
+.fpost__media {
+  display: grid;
+  place-items: center;
+  background: #e6dacb;
+  line-height: 0;
+}
+.fpost__media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 620px;
+  object-fit: contain;
+}
+
+/* Action bar: heart, comment, create */
+.fpost__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 0;
+}
+.fpost__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 42px;
+  padding: 0 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: 600 0.92rem var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+.fpost__btn:hover { background: rgb(43 29 20 / 0.07); }
+.fpost__btn:active { transform: scale(0.94); }
+.fpost__btn.is-liked { color: #d6342a; }
+.fpost__btn.is-liked svg { fill: currentColor; }
+.fpost__btn.is-reposted { color: var(--clay); }
+
+.fpost__create {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 40px;
+  margin-left: auto;
+  padding: 0 1rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s;
+}
+.fpost__create:hover { background: var(--clay); transform: translateY(-1px); }
+
+.fpost__btn:focus-visible,
+.fpost__create:focus-visible,
+.fpost__edit:focus-visible,
+.fpost__all:focus-visible,
+.fpost__comment input:focus-visible,
+.fpost__comment button:focus-visible {
+  outline: 3px solid var(--clay);
+  outline-offset: 2px;
+}
+
+.fpost__body { display: grid; gap: 0.6rem; padding: 0.5rem 1.1rem 1.1rem; }
+.fpost__title { margin: 0; font-family: var(--font-display); font-size: 1.4rem; line-height: 1.2; }
+.fpost__title a { color: var(--ink); text-decoration: none; }
+.fpost__title a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.fpost__desc { margin: 0; font-size: 0.93rem; line-height: 1.5; }
+.fpost__tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* Instagram-style comments */
+.fpost__comments { display: grid; gap: 0.35rem; }
+.fpost__all {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: 400 0.86rem var(--font-body);
+  cursor: pointer;
+}
+.fpost__all:hover { text-decoration: underline; }
+.fpost__clist { display: grid; gap: 0.3rem; margin: 0; padding: 0; list-style: none; }
+.fpost__c {
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  animation: fpost-in 0.3s ease;
+}
+.fpost__cname { color: var(--ink); font-weight: 700; text-decoration: none; }
+.fpost__cname:hover { text-decoration: underline; }
+@keyframes fpost-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.fpost__comment {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+.fpost__comment input {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 0.25rem;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 400 0.92rem var(--font-body);
+}
+.fpost__comment input::placeholder { color: var(--ink-soft); }
+.fpost__comment input:focus-visible { outline-offset: 0; border-radius: 6px; }
+.fpost__comment button {
+  flex: none;
+  min-height: 42px;
+  padding: 0 0.5rem;
+  border: 0;
+  background: none;
+  color: var(--clay);
+  font: 700 0.92rem var(--font-body);
+  cursor: pointer;
+}
+.fpost__comment button:disabled { opacity: 0.4; cursor: default; }
+.fpost__error { margin: 0; color: #b3261e; font-size: 0.82rem; }
+
+/* Home stories */
+.stories__photo { overflow: hidden; display: grid; place-items: center; }
+.stories__photo > * { width: 100%; height: 100%; }
+.stories__btn { text-decoration: none; }
+
+/* Loading skeleton */
+.fpost-skeleton {
+  height: 460px;
+  margin-bottom: 1.75rem;
+  border-radius: 18px;
+  background: #d3c4b3;
+  animation: fpost-pulse 1.4s ease-in-out infinite;
+}
+@keyframes fpost-pulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) {
+  .fpost-skeleton, .fpost__c { animation: none; }
+}
+
+@media (max-width: 480px) {
+  .fpost__bar { padding-inline: 0.6rem; }
+  .fpost__create { padding: 0 0.8rem; font-size: 0.8rem; }
+}

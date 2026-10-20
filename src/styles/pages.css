@@ -1,0 +1,103 @@
+/* Shared page primitives used by Explore, Create, Notifications and Profile */
+
+.page-wrap {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding: 3.75rem 0 130px; /* clears the fixed logo and the floating bottom nav */
+  box-sizing: border-box;
+}
+.page-wrap--medium { max-width: 1040px; }
+.page-wrap--narrow { max-width: 760px; }
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-line);
+}
+.page-head__text { min-width: 0; }
+
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--color-accent);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.page-title {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw + 0.5rem, 3.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+.page-sub {
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+  font-size: clamp(0.92rem, 1vw + 0.7rem, 1.02rem);
+}
+
+/* Buttons */
+.solid-btn,
+.outline-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.solid-btn {
+  border: 1px solid var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-bg);
+}
+.solid-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.solid-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.outline-btn {
+  border: 1px solid var(--color-line);
+  background: transparent;
+  color: var(--color-ink);
+}
+.outline-btn:hover { border-color: var(--color-ink); }
+.solid-btn:focus-visible,
+.outline-btn:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Small label pill (work type, status) */
+.tag-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.field-error {
+  margin: var(--space-1) 0 0;
+  color: var(--color-danger);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 760px) {
+  .page-wrap { padding-top: 3.25rem; }
+}

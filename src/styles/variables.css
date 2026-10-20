@@ -1,0 +1,25 @@
+/* Change these tokens to restyle the whole app. */
+:root {
+  --color-bg: #f4f1ec;
+  --color-surface: #fbfaf7;
+  --color-ink: #14120f;
+  --color-muted: #625c52;
+  --color-line: #ddd7cb;
+  --color-accent: #2b3bff;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: #e3e6ff;
+  --color-danger: #b3261e;
+  --color-success: #1f7a54;
+  --color-warn: #8a5a00;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Instrument Sans', system-ui, sans-serif;
+
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.5rem; --space-6: 2.5rem; --space-7: 4rem;
+
+  --radius-sm: 8px; --radius-md: 14px; --radius-lg: 22px; --radius-pill: 999px;
+  --shadow-lift: 0 14px 32px rgba(20, 18, 15, 0.14);
+  --sidebar-width: 248px;
+  --mobile-nav-height: 64px;
+}

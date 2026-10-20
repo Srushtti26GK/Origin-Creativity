@@ -1,0 +1,82 @@
+/* Notifications page */
+
+.notif__tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.notif__tabs::-webkit-scrollbar { display: none; }
+
+.notif__tab {
+  flex: none;
+  min-height: 42px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+}
+.notif__tab[aria-pressed="true"] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-bg);
+  font-weight: 600;
+}
+.notif__tab:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+
+.notif__list { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+
+.notif__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px 44px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+a.notif__item:hover { border-color: var(--color-line); transform: translateY(-1px); }
+a.notif__item:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 2px; }
+.notif__item.is-unread { border-color: var(--color-line); background: #fff; }
+
+.notif__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.notif__text { margin: 0; overflow-wrap: anywhere; font-size: 0.95rem; line-height: 1.4; }
+.notif__text span { display: block; margin-top: 2px; color: var(--color-muted); font-size: 0.8rem; }
+.notif__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+.notif__meta { display: flex; align-items: center; gap: var(--space-2); }
+.notif__empty-meta { width: 10px; }
+
+.notif__note {
+  margin-top: var(--space-5);
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .notif__item { grid-template-columns: 40px 40px minmax(0, 1fr) auto; padding: var(--space-3); }
+  .notif__icon { width: 40px; height: 40px; }
+}

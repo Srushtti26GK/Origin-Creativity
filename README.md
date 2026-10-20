@@ -1,190 +1,140 @@
-# Origin – Creativity 
+# Origin – Creativity (frontend)
 
-**One platform. Every art form. Unlimited originality.**
+A React + Vite frontend for a creative community where every work shows who made it and what inspired it.
+When `VITE_API_BASE_URL` is configured, authentication, profiles, posts, likes, comments,
+reposts/recreates, follows, notifications, and image uploads use the Express/PostgreSQL backend. With the API URL
+unset, demo posts and profiles remain mock-backed; social action counts are unavailable and
+Like/Repost actions are disabled rather than using fake data.
 
-##  About the Project
-
-Origin – Creativity is a creative community platform designed to bring together artists, creators, and individuals who want to express themselves through original work.
-
-The platform aims to provide a digital space where users can showcase their creativity across various art forms, including paintings, drawings, pottery, poetry, music, dance, and more.
-
-Unlike platforms focused primarily on trends and popularity, Origin – Creativity aims to celebrate authentic artistic expression, encourage creative exploration, and help creators connect through their shared passion for art.
-
-##  Objectives
-
-* Provide a common platform for diverse forms of artistic expression.
-* Enable creators to showcase and share their original work.
-* Encourage appreciation of creativity beyond conventional artistic boundaries.
-* Build a community where creators can discover and explore different art forms.
-* Develop a full-stack web application while learning practical software development concepts.
-
-##  Key Features
-
-The following features represent the planned scope of the project. Their implementation status will be updated as development progresses.
-
-* **Creative Profiles:** Allow users to create profiles to introduce themselves and showcase their work.
-* **Artwork Sharing:** Enable creators to publish their original creative work.
-* **Multiple Art Categories:** Organize content into categories such as painting, drawing, pottery, poetry, music, and dance.
-* **Creative Discovery:** Help users explore creative work across different categories.
-* **Community Interaction:** Provide ways for users to appreciate and engage with creators and their work.
-* **Content Management:** Allow creators to manage their published content.
-* **Responsive Interface:** Provide an accessible experience across desktop and mobile devices.
-
-##  Tech Stack
-
-The final technology stack will be documented as the application is developed.
-
-| Component               | Technology                                               |
-| ----------------------- | -------------------------------------------------------- |
-| Frontend                | To be finalized                                          |
-| Backend                 | To be finalized                                          |
-| Database                | PostgreSQL and/or MongoDB, depending on the final design |
-| Version Control         | Git and GitHub                                           |
-| Development Environment | Visual Studio Code                                       |
-
-##  System Architecture
-
-Origin – Creativity is planned as a web application with separate presentation, application logic, data storage, and media storage responsibilities.
-
-### Architecture Overview
-
-```text
-                 ┌─────────────────────────┐
-                 │         USER            │
-                 └────────────┬────────────┘
-                              │
-                              ▼
-                 ┌─────────────────────────┐
-                 │   FRONTEND / UI         │
-                 │ Pages, Forms, Profiles  │
-                 └────────────┬────────────┘
-                              │
-                       HTTP / HTTPS
-                              │
-                              ▼
-                 ┌─────────────────────────┐
-                 │       BACKEND           │
-                 │ APIs and Business Logic │
-                 │ Authentication          │
-                 │ Content Validation      │
-                 └────────────┬────────────┘
-                              │
-                  ┌───────────┴───────────┐
-                  ▼                       ▼
-       ┌──────────────────┐    ┌──────────────────┐
-       │     DATABASE     │    │   MEDIA STORAGE  │
-       │ User and Content │    │ Images, Audio,   │
-       │ Metadata         │    │ Video, etc.      │
-       └──────────────────┘    └──────────────────┘
-```
-
-### Architecture Explanation
-
-**1. Frontend Layer**
-
-The frontend provides the user interface through which creators register, manage profiles, publish content, and explore creative work.
-
-**2. Backend Layer**
-
-The backend processes requests from the frontend, validates incoming data, enforces application rules, manages authentication, and coordinates database and media-storage operations.
-
-**3. Database Layer**
-
-The database stores structured application information, such as user profiles, artwork descriptions, categories, and content references.
-
-**4. Media Storage Layer**
-
-A suitable file-storage solution will store uploaded images, audio recordings, videos, and other creative assets. The database can store the associated file URLs and metadata.
-
-**5. Communication Flow**
-
-When a user performs an action, the frontend sends a request to the backend API. The backend validates the request, interacts with the required storage services, and returns a response to the frontend.
-
-*Note: This diagram describes the planned architecture. The final implementation may differ depending on the selected technologies.*
-
-##  Project Structure
-
-The directory structure will be documented and updated as development progresses.
-
-```text
-Origin-Creativity/
-├── frontend/
-├── backend/
-├── README.md
-├── .gitignore
-└── .env.example
-```
-
-The frontend and backend directories represent the proposed organization; their exact contents will depend on the chosen framework and implementation.
-
-##  Installation and Setup
-
-### Prerequisites
-
-Install the following tools before running the project:
-
-* Git
-* Node.js and npm, if the selected stack uses them
-* Visual Studio Code or another code editor
-* The database required by the final implementation
-
-### 1. Clone the Repository
+## Run it
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd Origin-Creativity
+npm install
+npm run dev      # frontend at http://localhost:5173 and backend at http://localhost:4000
+npm run build    # production build into dist/
 ```
 
-### 2. Install Dependencies
+Requires Node 20+ (the backend declares Node 20+).
 
-Install the frontend and backend dependencies using the package manager and commands specified in their respective directories.
+## Backend
 
-### 3. Configure Environment Variables
+The Express + TypeScript backend lives in `backend/` and uses PostgreSQL. The schema includes users, PostgreSQL-backed sessions, posts and media, likes, and comments.
+Signup/login and server-managed sessions, public profiles, profile editing, paginated profile
+posts, post CRUD, image uploads, creator follows, likes, comments, reposts, and recreation
+attribution are implemented. Automated route tests use in-memory repositories; the real PostgreSQL
+database and Cloudinary account still require manual verification.
 
-Create the necessary environment configuration files using the provided `.env.example` templates.
+1. From the project root, run `npm install` and `npm --prefix backend install`.
+2. Copy `backend/.env.example` to `backend/.env` and set `DB_USER` and `DB_PASSWORD` to your local
+   PostgreSQL application role, and replace `SESSION_SECRET` with at least 32 random bytes. Do not
+   use a PostgreSQL superuser in production or commit `.env`.
+3. Run `npm --prefix backend run db:check` to verify that the configured role can connect.
+4. Apply outstanding migrations with `npm --prefix backend run db:migrate`. This includes the
+   follow, repost, and notification migrations if they have not yet been applied; do not roll back
+   data you need.
+5. For image uploads, obtain the Cloud name, API Key, and API Secret from the Cloudinary Dashboard.
+   Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in
+   `backend/.env` only; keep those values private and never put the API Secret in frontend
+   configuration. Uploads return an explicit unavailable response until all three values are set.
+6. Start both applications together from the project root with `npm run dev`. To run only one,
+   use `npm run dev:frontend` or `npm run dev:backend` from the root. Alternatively, start the
+   backend from `backend/` with `npm run dev`.
+7. Check `http://localhost:4000/api/health` and `http://localhost:4000/api/health/db`.
 
-Add the required database connection details and other configuration values.
+The database host, port, and name default to `localhost`, `5432`, and `creative_community`;
+frontend origin is explicitly configured by `FRONTEND_ORIGINS`. Use a dedicated PostgreSQL role
+for the application. The session store uses the existing singular `session` table (`sid`, `sess`,
+`expire`) and is configured not to create its own table. Auth endpoints are `POST /api/auth/signup`,
+`POST /api/auth/login`, `GET /api/auth/me`, and `POST /api/auth/logout`. Obtain a session-bound CSRF
+token from `GET /api/auth/csrf` and send it in `X-CSRF-Token` with the exact allowed `Origin` on
+signup, login, and logout. Cookies are HttpOnly, SameSite=Lax, and Secure in production.
+Profile endpoints are `GET /api/users/:username`, `GET /api/users/:username/posts?page=1&limit=12`,
+and authenticated `PATCH /api/users/me` (CSRF token and allowed Origin required). Follow endpoints
+are `GET /api/users/:username/follow-status`, `GET /api/users/:username/followers`,
+`GET /api/users/:username/following`, and authenticated `POST`/`DELETE
+/api/users/:username/follow`. Setting `VITE_API_BASE_URL` enables the API-backed profile view and
+edit form; direct profile URLs then use
+usernames. Post endpoints are `GET /api/posts?page=1&limit=12`,
+`GET /api/posts/:postId`, authenticated `POST /api/posts`,
+authenticated `PATCH /api/posts/:postId`, and authenticated `DELETE /api/posts/:postId`.
+Mutations require the session-bound CSRF token and exact allowed `Origin`. Post deletion is soft
+deletion. Social APIs are `POST`/`DELETE /api/posts/:postId/like`,
+`GET`/`POST /api/posts/:postId/comments`, `DELETE /api/posts/:postId/comments/:commentId`,
+`POST`/`DELETE /api/posts/:postId/repost`, and `GET /api/posts/:postId/inspired-works`.
+Notifications use authenticated `GET /api/notifications?page=1&limit=20`,
+`PATCH /api/notifications/:notificationId/read`, and `PATCH /api/notifications/read-all`.
+New likes, comments, and follows create notifications only when their action is newly stored;
+users are not notified about their own activity.
+Comments and reposts retain the original creator/post reference; recreations are separate posts
+with `source_post_id` attribution. `POST /api/uploads/images` accepts authenticated JPEG, PNG, WebP, or GIF images up to
+5 MB and requires an `Idempotency-Key`; it returns an HTTPS Cloudinary asset reference for
+association with a post. Likes and comments reuse the existing tables. Migration `003_reposts`
+creates the reversible repost relationship table; migration `004_notifications` creates
+notifications. With the API URL unset, the broader prototype still uses mock posts, creators, and
+profile pages; notifications require the backend and have no mock fallback.
+Generate a session secret locally with
+`node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"`.
+Posts are soft-deleted using `deleted_at`; their source-post reference is retained so inspired
+works can still show attribution when a source is no longer available.
 
-Never commit actual passwords, API keys, database credentials, or other secrets to GitHub.
+`npm test` uses controlled in-memory repositories and session stores for route flows, not a real
+PostgreSQL database or Cloudinary account; the database health test uses an intentionally
+unreachable local port and does not require database credentials.
+`npm --prefix backend run db:rollback` reverts the most recent migration and can remove follow,
+repost, or notification data. Do not run it against a database whose data must be kept.
 
-### 4. Configure the Database
+## What is implemented
 
-Set up the selected database and configure the connection details required by the backend.
+**Core:** home feed (masonry, category filters, skeletons, empty states), post details at `/post/:postId`,
+create post, edit and delete your own posts (with a confirm dialog), likes, comments, search/filter/sort
+(on `/explore`, kept in the URL), responsive layout (sidebar on desktop, bottom nav on mobile). When
+the API URL is configured, feed posts are paginated and profile details/timestamps come from PostgreSQL.
 
-Run any required database migrations or initialization scripts.
+**Origin features:** *Create From This* (`/create?source=<postId>` or in-app navigation state), automatic attribution derived from
+`sourcePostId`, five authenticity states, Inspired Works on every post, links back to the source,
+and a graceful "source no longer available" state (seed post `post-012` points at a missing source).
 
-### 5. Start the Application
+**Small extras:** creator profiles (`/profile/:creatorId`) and PostgreSQL-backed notifications for
+likes, comments, and follows.
+Saved collections and collaboration requests are not built.
 
-Start the backend and frontend using the development commands documented for the final implementation.
+## Architecture
 
-Once both services are running, open the local frontend address in your browser.
+```
+Pages  ->  Components  ->  usePosts()  ->  PostContext  ->  services/*  ->  mockRepository (localStorage)
+```
 
-**Note:** Exact installation commands and local URLs will be added after the application structure and technology stack are finalized.
+| Concern | Where |
+| --- | --- |
+| Routes | `src/app/router.jsx` |
+| Shared state (posts, comments, likes, creators) | `src/context/PostContext.jsx`, read via `src/hooks/usePosts.js` |
+| Data operations (the backend seam) | `src/services/postService.js`, `commentService.js`, `creatorService.js` |
+| Mock database and the only `localStorage` access | `src/services/mockRepository.js` |
+| Seed data and the current mock user | `src/data/` (`CURRENT_USER_ID` in `mockCreators.js`) |
+| Attribution and authenticity rules | `src/utils/attribution.js` |
+| Search, filter, sort | `src/utils/filters.js` |
+| Validation | `src/utils/validators.js` |
+| Design tokens | `src/styles/variables.css` |
 
-##  Security Considerations
+Authenticity rule: a creator's declaration never becomes "Verified". Only `authenticity.verificationStatus`
+(set by a future server process) can produce Verified or Verification Pending.
 
-* Keep credentials and API keys in environment variables.
-* Validate and sanitize user input on the backend.
-* Protect private routes and user-specific operations.
-* Enforce authorization checks before modifying or deleting content.
-* Validate uploaded files and restrict acceptable file types and sizes.
-* Never trust client-side validation alone.
+## API-backed and mock modes
 
-##  Future Enhancements
+1. Copy the root `.env.example` to `.env.local` and set `VITE_API_BASE_URL` to the backend URL
+   (for local development, `http://localhost:4000`). Vite exposes this value to
+   `src/services/apiConfig.js`.
+2. API-backed likes, comments, reposts, and recreations fail visibly on request errors; they do not
+   fall back to local mock interactions.
+3. Media: mock mode stores locally resized images; API mode uploads selected images through the
+   backend and requires the Cloudinary values described above.
 
-Potential future improvements include:
+## Notes
 
-* Personalized creative discovery.
-* Following creators and building creative networks.
-* Likes, comments, and other community interactions.
-* Advanced search and category filtering.
-* Creator portfolios and collections.
-* Accessibility improvements and a refined mobile experience.
-
-##  Development
-
-Origin – Creativity is being developed as an individual full-stack web development project, with an emphasis on practical implementation, system design, database management, and secure application development.
-
-##  License
-
-A license will be added if and when the project is distributed under specific open-source terms.
+- Seed artwork is generated locally (`src/utils/artwork.js`), so the app has no external image dependency.
+  The only external request is the Google Fonts stylesheet, and fonts fall back to system fonts if it fails.
+- Stored data lives in `localStorage` keys prefixed `origin:`. To reset the demo, clear them in your browser's dev tools.
+- Outside the API-backed flows above, the landing hero cards, mock mode posts/creators, demo
+  profiles, and notifications remain local/demo content.
+- Plain JavaScript was used as requested. If you add TypeScript later, start with the post, creator and comment types in the services.
+- Navigation components (`Sidebar`, `MobileNavigation`) share one file, `layout/Navigation.jsx`, since they share one item list.
