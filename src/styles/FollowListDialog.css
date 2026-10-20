@@ -1,0 +1,42 @@
+.follow-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(20 18 15 / 0.55);
+}
+
+.follow-dialog {
+  width: min(100%, 480px);
+  max-height: min(80vh, 640px);
+  overflow: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lift);
+}
+
+.follow-dialog__header,
+.follow-dialog__pagination,
+.follow-dialog__user {
+  display: flex;
+  align-items: center;
+}
+
+.follow-dialog__header,
+.follow-dialog__pagination {
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.follow-dialog__header h2 { margin: 0; }
+.follow-dialog__header .outline-btn { padding-inline: var(--space-3); }
+.follow-dialog__list { display: grid; gap: var(--space-2); margin-block: var(--space-4); }
+.follow-dialog__user { gap: var(--space-3); text-decoration: none; }
+.follow-dialog__user span { display: grid; }
+.follow-dialog__user small { color: var(--color-muted); }
+.follow-dialog__pagination { margin-top: var(--space-4); }
+.follow-dialog__backdrop:focus-within { outline: none; }
