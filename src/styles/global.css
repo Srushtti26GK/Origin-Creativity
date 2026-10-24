@@ -69,6 +69,7 @@ textarea { resize: vertical; }
 .modal__inner { padding: var(--space-5); }
 .modal__actions { display: flex; gap: var(--space-3); justify-content: flex-end; flex-wrap: wrap; }
 
+
 /* Artwork Image & Container */
 .artwork-container {
   position: relative;
@@ -77,28 +78,38 @@ textarea { resize: vertical; }
   overflow: hidden;
   background: var(--color-surface);
 }
+
 .artwork-container.is-loading::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(100deg, var(--skeleton-a) 30%, var(--skeleton-b) 50%, var(--skeleton-a) 70%);
+  background: linear-gradient(
+    100deg,
+    var(--skeleton-a) 30%,
+    var(--skeleton-b) 50%,
+    var(--skeleton-a) 70%
+  );
   background-size: 300% 100%;
   animation: shimmer 1.4s infinite linear;
   z-index: 1;
 }
+
 .artwork-container.is-loaded::before {
   display: none;
 }
+
 .artwork-container img.artwork {
   display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   transition: opacity 0.25s ease;
 }
+
 .artwork-container.is-loading img.artwork {
   opacity: 0;
 }
+
 .artwork-container.is-loaded img.artwork {
   opacity: 1;
 }

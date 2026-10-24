@@ -88,9 +88,9 @@ function MockProfilePage({ creatorId }) {
   };
 
   return (
-    <div className="page-wrap">
-      <header className="profile__header">
-        {/* Cover banner comes from .profile__header::before in the CSS */}
+  <div className="page-wrap profile-page">
+    <header className="profile__header">
+      <div className="profile__cover" aria-hidden="true" />
         <div className="profile__who">
           <div className="profile__avatar"><Avatar creator={creator} size={96} /></div>
 
