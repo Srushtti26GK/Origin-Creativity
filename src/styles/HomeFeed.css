@@ -81,6 +81,22 @@
   text-decoration: none;
 }
 .fpost__edit:hover { border-color: var(--ink); }
+.fpost__follow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-height: 36px;
+  padding: 0 0.9rem;
+  border: 1px solid var(--clay);
+  border-radius: 999px;
+  color: var(--clay);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.fpost__follow:hover { background: var(--clay); color: var(--paper-soft); }
+.fpost__follow:focus-visible { outline: 3px solid var(--clay); outline-offset: 2px; }
 
 .feed__pagination,
 .explore__pagination { display: grid; justify-items: center; gap: var(--space-3); margin: var(--space-5) 0; }
@@ -273,4 +289,176 @@
 @media (max-width: 480px) {
   .fpost__bar { padding-inline: 0.6rem; }
   .fpost__create { padding: 0 0.8rem; font-size: 0.8rem; }
+}
+
+/* ==========================================
+   FEED POST — SUPPORT DARK AND LIGHT THEMES
+   Uses the existing application theme variables
+   ========================================== */
+
+.fpost {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+/* Author header and post content */
+.fpost__head,
+.fpost__body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.fpost__name,
+.fpost__title,
+.fpost__title a,
+.fpost__who,
+.fpost__cname {
+  color: var(--color-ink);
+}
+
+.fpost__meta,
+.fpost__desc,
+.fpost .muted,
+.fpost__comments p {
+  color: var(--color-muted);
+}
+
+/* Follow and edit actions */
+.fpost__follow,
+.fpost__edit {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: transparent;
+}
+
+/* Like, comment and repost actions */
+.fpost__bar {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.fpost__btn {
+  color: var(--color-ink);
+  background: transparent;
+  border-color: var(--color-line);
+}
+
+.fpost__btn:hover {
+  background: var(--color-accent-soft);
+}
+
+.fpost__btn.is-liked {
+  color: var(--color-danger);
+}
+
+.fpost__btn.is-reposted {
+  color: var(--color-accent);
+}
+
+/* Recreate button */
+.fpost__create {
+  background: var(--color-ink);
+  color: var(--color-bg);
+  border-color: var(--color-ink);
+}
+
+.fpost__create:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  border-color: var(--color-accent);
+}
+
+/* Comment section and divider */
+.fpost__comments {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border-color: var(--color-line);
+}
+
+.fpost__c {
+  color: var(--color-ink);
+}
+
+.fpost__c-text {
+  color: var(--color-ink);
+}
+
+.fpost__all,
+.fpost .comment-delete {
+  color: var(--color-muted);
+  background: transparent;
+  border-color: var(--color-line);
+}
+
+/* Comment form */
+.fpost__comment input {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  caret-color: var(--color-accent);
+}
+
+.fpost__comment input::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+.fpost__comment input:focus {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.fpost__comment button {
+  background: transparent;
+  color: var(--color-accent);
+  border: 0;
+}
+
+.fpost__comment button:disabled {
+  color: var(--color-muted);
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Repost attribution and separators */
+.fpost__repost-attribution {
+  background: var(--color-surface);
+  color: var(--color-muted);
+  border-color: var(--color-line);
+}
+
+.fpost__repost-attribution a {
+  color: var(--color-ink);
+}
+
+/* Preserve the artwork's original appearance */
+.fpost__media {
+  display: block;
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+  background: var(--color-line);
+  border: 0;
+  line-height: 0;
+}
+
+.fpost__media img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Smooth theme transitions */
+.fpost button,
+.fpost input,
+.fpost a {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }

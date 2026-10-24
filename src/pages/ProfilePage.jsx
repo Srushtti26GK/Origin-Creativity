@@ -32,7 +32,7 @@ function MockProfilePage({ creatorId }) {
   const { user } = useAuth();
   const { status, posts, creatorsById, commentCounts } = usePosts();
   const [tab, setTab] = useState('works');
-  const [view, setView] = useState('feed'); // 'feed' | 'grid'
+  const [view, setView] = useState('grid'); // 'feed' | 'grid' (grid matches the mockup)
   const [imageViewerPost, setImageViewerPost] = useState(null);
   const tabRefs = useRef([]);
 
@@ -90,19 +90,23 @@ function MockProfilePage({ creatorId }) {
   return (
     <div className="page-wrap">
       <header className="profile__header">
-        <div className="profile__avatar"><Avatar creator={creator} size={96} /></div>
+        {/* Cover banner comes from .profile__header::before in the CSS */}
+        <div className="profile__who">
+          <div className="profile__avatar"><Avatar creator={creator} size={96} /></div>
 
-        <div className="profile__info">
-          <p className="eyebrow">{isOwn ? 'Your profile' : 'Creator'}</p>
-          <h1 className="profile__name">{creator.name}</h1>
-          {creator.handle && <p className="profile__handle">@{String(creator.handle).replace(/^@/, '')}</p>}
-          {creator.bio && <p className="profile__bio">{creator.bio}</p>}
+          <div className="profile__info">
+            <h1 className="profile__name">{creator.name}</h1>
+            {creator.handle && <p className="profile__handle">@{String(creator.handle).replace(/^@/, '')}</p>}
+          </div>
+
           {isOwn && (
             <div className="profile__actions">
               <Link to="/create" className="solid-btn"><Plus size={18} aria-hidden="true" /> New post</Link>
             </div>
           )}
         </div>
+
+        {creator.bio && <p className="profile__bio">{creator.bio}</p>}
 
         <dl className="profile__stats">
           <div className="profile__stat"><dt>Works</dt><dd>{works.length}</dd></div>

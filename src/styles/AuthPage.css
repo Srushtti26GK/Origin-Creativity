@@ -28,7 +28,13 @@
   padding: var(--space-2) var(--space-3);
   border: 1.5px solid var(--color-line);
   border-radius: var(--radius-sm);
-  background: var(--color-surface);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+.auth-card input:focus {
+  border-color: var(--color-accent);
+  outline: none;
 }
 
 .auth-card__submit {

@@ -1,6 +1,6 @@
 import { Outlet, ScrollRestoration, useLocation } from 'react-router-dom';
 import { WifiOff } from 'lucide-react';
-import { Sidebar, MobileNavigation } from './Navigation.jsx';
+import { MobileNavigation } from './Navigation.jsx';
 import EmptyState from '../common/EmptyState.jsx';
 import { usePosts } from '../../hooks/usePosts.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -13,7 +13,6 @@ export default function AppLayout() {
   return (
     <div className="app-shell">
       <a href="#main" className="skip-link">Skip to content</a>
-      <Sidebar />
       <main id="main" className="page">
         {notice && <p className="notice" role="status">{notice}</p>}
         {authError && (

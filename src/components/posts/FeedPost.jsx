@@ -170,6 +170,15 @@ export default function FeedPost({ post }) {
             <Pencil size={16} aria-hidden="true" /> Edit
           </Link>
         )}
+        {!isOwn && creator && (
+          <Link
+            to={`/profile/${creator.username ?? post.creatorId}`}
+            className="fpost__follow"
+            aria-label={`Follow ${creator.name ?? 'creator'}`}
+          >
+            Follow
+          </Link>
+        )}
       </header>
 
       <button type="button" className="fpost__media" aria-label={`View image for ${post.title}`} onClick={() => setImageViewerOpen(true)}>

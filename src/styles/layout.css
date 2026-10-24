@@ -8,18 +8,12 @@
 
 
 /* =========================================
-   SIDEBAR
-   Hidden because navigation is now at bottom
+   SIDEBAR (hidden: navigation is at bottom)
 ========================================= */
 
 .sidebar {
   display: none;
 }
-
-
-/* =========================================
-   BRANDING
-========================================= */
 
 .brand {
   display: inline-flex;
@@ -35,15 +29,21 @@
   text-decoration: none;
 }
 
-
-/* =========================================
-   NAVIGATION LINKS
-========================================= */
-
 .sidebar__nav {
   display: grid;
   gap: 0.4rem;
 }
+
+.sidebar__note {
+  margin: auto 0 0;
+  color: var(--color-muted);
+  font-size: 0.82rem;
+}
+
+
+/* =========================================
+   NAV LINKS (shared)
+========================================= */
 
 .nav-link {
   display: flex;
@@ -59,18 +59,16 @@
   font-weight: 500;
   text-decoration: none;
 
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .nav-link:hover {
-  background: var(--color-bg);
+  background: var(--color-accent-soft);
 }
 
 .nav-link.is-active {
-  background: var(--color-ink);
-  color: var(--color-bg);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-weight: 600;
 }
 
@@ -81,36 +79,19 @@
 
 
 /* =========================================
-   SIDEBAR NOTE
-========================================= */
-
-.sidebar__note {
-  margin: auto 0 0;
-  color: var(--color-muted);
-  font-size: 0.82rem;
-}
-
-
-/* =========================================
    MAIN PAGE
 ========================================= */
 
 .page {
   min-width: 100%;
   min-height: 100vh;
-
   margin-left: 0;
-
-  padding: clamp(1rem, 1.25rem, 8rem);
-  padding-bottom: 0;
-
+  padding: 1.25rem;
+  padding-bottom: calc(7rem + env(safe-area-inset-bottom));
   box-sizing: border-box;
+  background: var(--color-bg);
+  color: var(--color-ink);
 }
-
-
-/* =========================================
-   PAGE HEADER
-========================================= */
 
 .page-header {
   margin-bottom: var(--space-5);
@@ -120,16 +101,10 @@
   color: var(--color-muted);
 }
 
-
-/* =========================================
-   TOOLBAR
-========================================= */
-
 .toolbar {
   display: flex;
   align-items: end;
   gap: var(--space-3);
-
   margin-bottom: var(--space-4);
 }
 
@@ -144,97 +119,73 @@
 
 /* =========================================
    GLASSMORPHISM BOTTOM NAVBAR
-   Visible on desktop and mobile
+   Same position as before. Colors follow the theme:
+   dark glass in dark mode, frosted white in light mode.
 ========================================= */
 
 .mobile-nav {
   position: fixed;
-
-  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  bottom: max(1rem, env(safe-area-inset-bottom));
   left: 50%;
-
   z-index: 1000;
 
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.7fr);
   align-items: center;
-
   gap: 4px;
 
-  width: min(92vw, 540px);
+  width: min(calc(100vw - 2rem), 680px);
   margin: 0;
   padding: 8px;
 
-  border: 1px solid rgb(255 255 255 / 0.22);
-  border-radius: 26px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
 
-  background: rgb(36 24 17 / 0.62);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
 
-  box-shadow:
-    0 12px 34px rgb(0 0 0 / 0.24),
-    inset 0 1px 0 rgb(255 255 255 / 0.16);
-
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
-  backdrop-filter: blur(22px) saturate(160%);
-
+  box-shadow: var(--shadow-lift);
   transform: translateX(-50%);
 }
 
-
-/* Individual navigation items */
+.mobile-nav .nav-link__label--mobile { display: none; }
 
 .mobile-nav .nav-link {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-
   gap: 5px;
 
   min-width: 0;
   min-height: 54px;
-
   padding: 8px 4px;
 
   border-radius: 18px;
-
   background: transparent;
-  color: rgb(255 255 255 / 0.78);
+  color: var(--color-muted);
 
   font-size: 0.75rem;
   line-height: 1.1;
   font-weight: 500;
-
   text-align: center;
   text-decoration: none;
 
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
-
-/* Hover effect */
-
 .mobile-nav .nav-link:hover {
-  background: rgb(255 255 255 / 0.12);
-  color: #fff;
-
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
   transform: translateY(-2px);
 }
 
-
-/* Active item */
-
 .mobile-nav .nav-link.is-active {
-  background: rgb(255 255 255 / 0.18);
-  color: #fff;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-weight: 600;
 }
-
-
-/* Navbar icons */
 
 .mobile-nav .nav-link svg {
   flex: none;
@@ -242,17 +193,16 @@
   height: 22px;
 }
 
-
-/* Keyboard accessibility */
-
 .mobile-nav .nav-link:focus-visible {
-  outline: 2px solid white;
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
+/* Profile + theme toggle + logout */
+
 .nav-account {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 36px;
+  grid-template-columns: minmax(0, 1fr) 36px 36px;
   align-items: center;
   min-width: 0;
 }
@@ -266,17 +216,18 @@
   border: 0;
   border-radius: 12px;
   background: transparent;
-  color: rgb(255 255 255 / 0.82);
+  color: var(--color-muted);
   cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .nav-account__logout:hover {
-  background: rgb(255 255 255 / 0.12);
-  color: #fff;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .nav-account__logout:focus-visible {
-  outline: 2px solid white;
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -287,12 +238,9 @@
 
 .site-brand {
   position: absolute;
-
   top: 1.25rem;
   left: 1.5rem;
-
   z-index: 100;
-
   margin: 0;
 }
 
@@ -300,42 +248,27 @@
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
-
   color: var(--color-ink);
-
   font-family: var(--font-display);
   font-size: 1.35rem;
   font-weight: 700;
-
   text-decoration: none;
 }
 
 .site-brand__logo {
   width: 38px;
   height: 38px;
-
   object-fit: contain;
 }
 
 
 /* =========================================
-   RESPONSIVE DESIGN
+   RESPONSIVE
 ========================================= */
 
 @media (max-width: 760px) {
 
-  /* Hide the old sidebar */
-
-  .sidebar {
-    display: none;
-  }
-
-
-  /* Main page spacing */
-
   .page {
-    margin-left: 0;
-
     padding: 1.25rem 1rem 110px;
   }
 
@@ -343,40 +276,35 @@
     padding: 0 0 110px;
   }
 
-
-  /* Bottom navbar */
-
   .mobile-nav {
-    bottom: max(0.75rem, env(safe-area-inset-bottom));
-
-    width: min(94vw, 440px);
-
+    bottom: max(0.65rem, env(safe-area-inset-bottom));
+    width: min(94vw, 480px);
     gap: 2px;
     padding: 6px;
   }
 
-
-  /* Navbar items */
-
   .mobile-nav .nav-link {
     min-height: 50px;
-
     gap: 4px;
     padding: 7px 2px;
-
-    font-size: 0.64rem;
+    font-size: 0.68rem;
   }
 
-
-  /* Navbar icons */
+  .mobile-nav .nav-link__label--desktop { display: none; }
+  .mobile-nav .nav-link__label--mobile { display: inline; }
 
   .mobile-nav .nav-link svg {
     width: 21px;
     height: 21px;
   }
 
+  .nav-account {
+    grid-template-columns: minmax(0, 1fr) 30px 30px;
+  }
 
-  /* Website branding */
+  .nav-account__logout {
+    width: 30px;
+  }
 
   .site-brand {
     top: 1rem;
@@ -392,9 +320,6 @@
     height: 32px;
   }
 
-
-  /* Toolbar */
-
   .toolbar {
     align-items: stretch;
     flex-wrap: wrap;
@@ -403,5 +328,4 @@
   .toolbar > :first-child {
     flex-basis: 100%;
   }
-
 }

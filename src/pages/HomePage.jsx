@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Bell, Plus, Search } from "lucide-react";
 import Avatar from "../components/common/Avatar.jsx";
 import FeedPost from "../components/posts/FeedPost.jsx";
 import { usePosts } from "../hooks/usePosts.js";
@@ -27,21 +27,21 @@ const ARC_CARDS = [
   { id: "sketchbook-club", title: "Sketchbook Club", blurb: "Pages that were never meant to be finished.", image: "https://res.cloudinary.com/q8wj5lcc/image/upload/v1792508564/WhatsApp_Image_2026-10-20_at_8.32.13_PM_1.jpg" },
 ];
 
-/* ---------------- Hero + rotating arc carousel (unchanged) ---------------- */
+/* ---------------- Hero + rotating arc carousel ---------------- */
 
 const ARC_STEP = 360 / ARC_CARDS.length;
 const SPIN_SPEED = 7;
-const FADE_START = 62;
-const FADE_END = 100;
+const ARC_FOCUS = -35; // where the focused card sits on the circle (0 = right, negative = up)
 
 const wrap180 = (deg) => ((((deg + 180) % 360) + 360) % 360) - 180;
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
 
-function ArcCarousel({ onCurrentChange }) {
+function ArcCarousel() {
   const itemRefs = useRef([]);
   const spin = useRef(0);
-  const paused = useRef(false);
-  const currentRef = useRef(0);
+  const hoverPaused = useRef(false);
+  const manualPaused = useRef(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -49,39 +49,35 @@ function ArcCarousel({ onCurrentChange }) {
     let last = performance.now();
 
     const render = () => {
-      let nearest = 0;
-      let nearestDist = Infinity;
-
       ARC_CARDS.forEach((_, i) => {
         const el = itemRefs.current[i];
         if (!el) return;
 
-        const angle = wrap180(i * ARC_STEP + spin.current);
-        const dist = Math.abs(angle);
-        const focus = clamp01(1 - dist / ARC_STEP);
-        const visibility = 1 - clamp01((dist - FADE_START) / (FADE_END - FADE_START));
+        // rel = distance from the focused card, in degrees
+        const rel = wrap180(i * ARC_STEP + spin.current);
+        const focus = clamp01(1 - Math.abs(rel) / ARC_STEP);
+        // one card fades out before the focus, three trail after it
+        const visibility = rel < 0
+          ? 1 - clamp01((-rel - 25) / 20)
+          : 1 - clamp01((rel - 55) / 30);
+        const rad = ((rel + ARC_FOCUS) * Math.PI) / 180;
 
-        el.style.transform = `rotate(${angle}deg) translateY(calc(var(--arc-radius) * -1)) scale(${1 + focus * 0.3})`;
+        el.style.transform =
+          `translate(calc(var(--arc-radius) * ${Math.cos(rad).toFixed(4)}), ` +
+          `calc(var(--arc-radius) * ${Math.sin(rad).toFixed(4)})) ` +
+          `rotate(${(rel * 0.4).toFixed(2)}deg) scale(${(0.78 + focus * 0.5).toFixed(3)})`;
         el.style.opacity = visibility;
         el.style.pointerEvents = visibility > 0.3 ? "auto" : "none";
         el.style.zIndex = Math.round(focus * 10);
-
-        if (dist < nearestDist) {
-          nearestDist = dist;
-          nearest = i;
-        }
       });
-
-      if (nearest !== currentRef.current) {
-        currentRef.current = nearest;
-        onCurrentChange(nearest);
-      }
     };
 
     const tick = (now) => {
       const dt = (now - last) / 1000;
       last = now;
-      if (!paused.current) spin.current = (spin.current + SPIN_SPEED * dt) % 360;
+      if (!hoverPaused.current && !manualPaused.current) {
+        spin.current = (spin.current + SPIN_SPEED * dt) % 360;
+      }
       render();
       frame = requestAnimationFrame(tick);
     };
@@ -89,46 +85,93 @@ function ArcCarousel({ onCurrentChange }) {
     render();
     if (!reduceMotion) frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [onCurrentChange]);
+  }, []);
 
-  const pause = () => { paused.current = true; };
-  const resume = () => { paused.current = false; };
+  const pause = () => { hoverPaused.current = true; };
+  const resume = () => { hoverPaused.current = false; };
+  const toggle = () => {
+    manualPaused.current = !manualPaused.current;
+    setIsPaused(manualPaused.current);
+  };
 
   return (
-    <ul className="arc" aria-label="Featured creative worlds">
-      {ARC_CARDS.map((card, i) => (
-        <li key={card.id} className="arc__item" ref={(el) => (itemRefs.current[i] = el)}>
-          <Link
-            to="/explore"
-            className="arc__card"
-            style={card.image ? { backgroundImage: `url(${card.image})` } : undefined}
-            aria-label={card.title}
-            onPointerEnter={pause}
-            onPointerLeave={resume}
-            onFocus={pause}
-            onBlur={resume}
-          />
-        </li>
-      ))}
-    </ul>
+    <>
+   
+      <ul className="arc" aria-label="Featured creative worlds">
+        {ARC_CARDS.map((card, i) => (
+          <li key={card.id} className="arc__item" ref={(el) => (itemRefs.current[i] = el)}>
+            <Link
+              to="/explore"
+              className="arc__card"
+              style={card.image ? { backgroundImage: `url(${card.image})` } : undefined}
+              aria-label={card.title}
+              onPointerEnter={pause}
+              onPointerLeave={resume}
+              onFocus={pause}
+              onBlur={resume}
+            />
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
 function Hero() {
-  const [current, setCurrent] = useState(0);
-  const { title, blurb } = ARC_CARDS[current];
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [query, setQuery] = useState("");
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    const q = query.trim();
+    navigate(q ? `/explore?q=${encodeURIComponent(q)}` : "/explore");
+  };
+
+  const initial = (user?.name || user?.username || "").trim().charAt(0).toUpperCase();
 
   return (
     <header className="hero">
-      <ArcCarousel onCurrentChange={setCurrent} />
+      <div className="hero__top">
+        <Link to="/" className="hero__brand">
+          Origin
+          <small>Creativity</small>
+        </Link>
+
+        <form className="hero__search" role="search" onSubmit={submitSearch}>
+          <input 
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search art, creators, or keywords..."
+            aria-label="Search art, creators, or keywords"
+          />
+        </form>
+
+        <div className="hero__top-actions">
+          <Link to="/notifications" className="hero__icon-btn" aria-label="Notifications">
+            <Bell size={18} aria-hidden="true" />
+          </Link>
+          <Link
+            to={user ? `/profile/${user.username}` : "/login"}
+            className="hero__icon-btn"
+            aria-label={user ? "Your profile" : "Sign in"}
+          >
+            {initial || "?"}
+          </Link>
+        </div>
+      </div>
+
+      <ArcCarousel />
       <div className="hero__center">
         <h1 className="hero__title">
-          <span className="hero__script">Origin</span>
-          <span className="hero__display">Creative</span>
+          Where <em>Original Art</em> Finds Its People
         </h1>
-        <p className="hero__name" aria-live="off">{title}</p>
-        <p className="hero__blurb">{blurb}</p>
-        <Link to="/explore" className="hero__details">Details</Link>
+        <p className="hero__blurb">
+          Discover, create and connect with a global community of artists,
+          dreamers and creators.
+        </p>
+        <Link to="/explore" className="hero__details">Explore Gallery</Link>
       </div>
     </header>
   );

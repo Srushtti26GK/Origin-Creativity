@@ -1,25 +1,76 @@
-/* Change these tokens to restyle the whole app. */
-:root {
-  --color-bg: #f4f1ec;
-  --color-surface: #fbfaf7;
-  --color-ink: #14120f;
-  --color-muted: #625c52;
-  --color-line: #ddd7cb;
-  --color-accent: #2b3bff;
+/* Origin Creativity: dark is the default, light overrides it. */
+:root,
+[data-theme="dark"] {
+  --color-bg: #080808;
+  --color-surface: #29282d;
+  --color-ink: #f1f0ee;
+  --color-muted: #bbbbbb;
+  --color-line: #393939;
+  --color-accent: #f49a38;
+  --color-accent-hover: #e48a28;
   --color-accent-ink: #ffffff;
-  --color-accent-soft: #e3e6ff;
-  --color-danger: #b3261e;
-  --color-success: #1f7a54;
-  --color-warn: #8a5a00;
+  --color-accent-soft: rgb(244 154 56 / 0.14);
+  --color-coral: #e76b52;
+  --color-teal: #547f73;
+  --color-danger: #e76b52;
+  --color-success: #547f73;
+  --color-warn: #f49a38;
 
-  --font-display: 'Fraunces', Georgia, serif;
-  --font-body: 'Instrument Sans', system-ui, sans-serif;
+  --glass: rgb(41 40 45 / 0.55);
+  --skeleton-a: #29282d;
+  --skeleton-b: #393939;
+  --shadow-lift: 0 14px 32px rgb(0 0 0 / 0.5);
+  --hero-glow: radial-gradient(60% 70% at 72% 45%, rgb(244 154 56 / 0.12), transparent 70%);
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --color-bg: #fbf3e8;
+  --color-surface: #ffffff;
+  --color-ink: #1a1a1a;
+  --color-muted: #6b6b6b;
+  --color-line: #e6dccb;
+  --color-accent: #f49a38;
+  --color-accent-hover: #e48a28;
+  --color-accent-ink: #ffffff;
+  --color-accent-soft: rgb(244 154 56 / 0.16);
+  --color-coral: #e76b52;
+  --color-teal: #547f73;
+  --color-danger: #d4492f;
+  --color-success: #547f73;
+  --color-warn: #b8731a;
+
+  --glass: rgb(255 255 255 / 0.55);
+  --skeleton-a: #efe5d6;
+  --skeleton-b: #fbf3e8;
+  --shadow-lift: 0 14px 32px rgb(80 50 25 / 0.14);
+  --hero-glow: radial-gradient(60% 70% at 72% 45%, rgb(244 154 56 / 0.18), transparent 70%);
+  color-scheme: light;
+}
+
+:root {
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-poster: 'Bodoni Moda', 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-script: 'Allura', cursive;
 
   --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
   --space-5: 1.5rem; --space-6: 2.5rem; --space-7: 4rem;
 
   --radius-sm: 8px; --radius-md: 14px; --radius-lg: 22px; --radius-pill: 999px;
-  --shadow-lift: 0 14px 32px rgba(20, 18, 15, 0.14);
   --sidebar-width: 248px;
   --mobile-nav-height: 64px;
+}
+
+/* Aliases so older styles (HomeFeed, PostCard, etc.) follow the theme.
+   Declared on :root and both theme selectors so they resolve per theme. */
+:root,
+[data-theme="dark"],
+[data-theme="light"] {
+  --paper: var(--color-bg);
+  --paper-soft: var(--color-surface);
+  --ink: var(--color-ink);
+  --ink-soft: var(--color-muted);
+  --clay: var(--color-accent);
+  --line: var(--color-line);
 }

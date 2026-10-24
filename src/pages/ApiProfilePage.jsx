@@ -233,45 +233,54 @@ export default function ApiProfilePage({ username }) {
   }
 
   return (
-    <div className="page-wrap">
+    <div className="page-wrap profile-page">
       <header className="profile__header">
-        <div className="profile__avatar">
-          {profile.avatarUrl
-            ? <img className="api-profile__avatar-image" src={profile.avatarUrl} alt="" />
-            : <Avatar creator={{ name: profile.displayName }} size={96} />}
-        </div>
-        <div className="profile__info">
-          <p className="eyebrow">{isOwn ? 'Your profile' : 'Creator'}</p>
-          <h1 className="profile__name">{profile.displayName}</h1>
-          <p className="profile__handle">@{profile.username}</p>
+        <div className="profile__cover" aria-hidden="true" />
 
-          <div className="profile__connection-badges">
-            {followStats.isMutual && (
-              <span className="profile__badge profile__badge--mutual">
-                <Users size={14} aria-hidden="true" /> Mutual connection
-              </span>
-            )}
-            {!followStats.isMutual && followStats.followsYou && (
-              <span className="profile__badge">Follows you</span>
-            )}
-            {followStats.mutualFollowingCount > 0 && (
-              <span className="profile__mutual-note">
-                Followed by {followStats.mutualFollowingCount} creators you follow
-              </span>
+        <div className="profile__who">
+          <div className="profile__avatar">
+            {profile.avatarUrl ? (
+              <img
+                className="api-profile__avatar-image"
+                src={profile.avatarUrl}
+                alt={`${profile.displayName}'s avatar`}
+              />
+            ) : (
+              <Avatar creator={{ name: profile.displayName }} size={96} />
             )}
           </div>
 
-          {profile.bio && <p className="profile__bio">{profile.bio}</p>}
+          <div className="profile__info">
+            <h1 className="profile__name">{profile.displayName}</h1>
+            <p className="profile__handle">@{profile.username}</p>
 
-          {isOwn && (
-            <div className="profile__actions">
-              <button type="button" className="outline-btn" onClick={() => setEditOpen((open) => !open)}>
+            <div className="profile__connection-badges">
+              {followStats.isMutual && (
+                <span className="profile__badge profile__badge--mutual">
+                  <Users size={14} aria-hidden="true" /> Mutual connection
+                </span>
+              )}
+              {!followStats.isMutual && followStats.followsYou && (
+                <span className="profile__badge">Follows you</span>
+              )}
+              {followStats.mutualFollowingCount > 0 && (
+                <span className="profile__mutual-note">
+                  Followed by {followStats.mutualFollowingCount} creators you follow
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="profile__actions">
+            {isOwn ? (
+              <button
+                type="button"
+                className="outline-btn"
+                onClick={() => setEditOpen((open) => !open)}
+              >
                 {editOpen ? 'Cancel edit' : 'Edit profile'}
               </button>
-            </div>
-          )}
-          {!isOwn && signedInUser && (
-            <div className="profile__actions">
+            ) : signedInUser ? (
               <button
                 type="button"
                 className={followStats.isFollowing ? 'outline-btn' : 'solid-btn'}
@@ -284,24 +293,58 @@ export default function ApiProfilePage({ username }) {
                     ? 'Following'
                     : 'Follow'}
               </button>
-            </div>
-          )}
-          {!isOwn && !signedInUser && (
-            <div className="profile__actions">
+            ) : (
               <Link className="solid-btn" to="/login">Sign in to follow</Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
+        {profile.bio && <p className="profile__bio">{profile.bio}</p>}
+
         <dl className="profile__stats">
-          <div className="profile__stat"><dt>Works</dt><dd>{profile.postCount}</dd></div>
           <div className="profile__stat">
-            <dd><button type="button" className="profile__stat-button" onClick={() => setFollowList('followers')}>{followStats.followersCount}</button></dd>
-            <dt><button type="button" className="profile__stat-label" onClick={() => setFollowList('followers')}>Followers</button></dt>
+            <dd>{profile.postCount ?? 0}</dd>
+            <dt>Works</dt>
           </div>
           <div className="profile__stat">
-            <dd><button type="button" className="profile__stat-button" onClick={() => setFollowList('following')}>{followStats.followingCount}</button></dd>
-            <dt><button type="button" className="profile__stat-label" onClick={() => setFollowList('following')}>Following</button></dt>
+            <dd>
+              <button
+                type="button"
+                className="profile__stat-button"
+                onClick={() => setFollowList('followers')}
+              >
+                {followStats.followersCount}
+              </button>
+            </dd>
+            <dt>
+              <button
+                type="button"
+                className="profile__stat-label"
+                onClick={() => setFollowList('followers')}
+              >
+                Followers
+              </button>
+            </dt>
+          </div>
+          <div className="profile__stat">
+            <dd>
+              <button
+                type="button"
+                className="profile__stat-button"
+                onClick={() => setFollowList('following')}
+              >
+                {followStats.followingCount}
+              </button>
+            </dd>
+            <dt>
+              <button
+                type="button"
+                className="profile__stat-label"
+                onClick={() => setFollowList('following')}
+              >
+                Following
+              </button>
+            </dt>
           </div>
         </dl>
       </header>
