@@ -67,9 +67,16 @@
 .explore-tile {
   position: relative;
   display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
   aspect-ratio: 1 / 1;
   overflow: hidden;
   background: var(--color-line);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: zoom-in;
 }
 .explore-tile img {
   display: block;

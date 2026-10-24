@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { RequestHandler } from 'express';
 import { createCsrfProtection } from '../middleware/csrf.js';
 import type { NotificationRepository } from '../repositories/notification.repository.js';
+import { notificationHub } from '../services/notificationHub.js';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
@@ -13,6 +14,16 @@ export function createNotificationsRouter(
 ) {
   const router = Router();
   const requireCsrf = createCsrfProtection(allowedOrigins);
+
+  router.get('/events', requireAuthenticated, (request, response) => {
+    response.setHeader('Content-Type', 'text/event-stream');
+    response.setHeader('Cache-Control', 'no-cache, no-transform');
+    response.setHeader('Connection', 'keep-alive');
+    response.setHeader('X-Accel-Buffering', 'no');
+    response.flushHeaders?.();
+
+    notificationHub.addClient(request.session.userId!, response);
+  });
 
   router.get('/', requireAuthenticated, async (request, response, next) => {
     const page = parsePositiveInteger(request.query.page, 1);

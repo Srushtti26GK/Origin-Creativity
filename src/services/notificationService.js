@@ -1,4 +1,5 @@
 import { apiRequest } from './apiClient.js';
+import { API_BASE_URL } from './apiConfig.js';
 import { getCsrfToken } from './authService.js';
 
 export async function getNotificationsPage(page = 1, limit = 20) {
@@ -20,4 +21,36 @@ export async function markAllNotificationsRead() {
     method: 'PATCH',
     headers: { 'X-CSRF-Token': csrfToken },
   });
+}
+
+/**
+ * Subscribes to Server-Sent Events (SSE) for live notification delivery.
+ * Automatically handles reconnection and cleanup.
+ */
+export function subscribeToNotificationEvents(onNotification, onError) {
+  if (!API_BASE_URL || typeof EventSource === 'undefined') {
+    return () => {};
+  }
+
+  const url = `${API_BASE_URL}/api/notifications/events`;
+  const eventSource = new EventSource(url, { withCredentials: true });
+
+  eventSource.addEventListener('notification', (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      onNotification?.(data);
+    } catch {
+      // Ignore parse issues
+    }
+  });
+
+  if (onError) {
+    eventSource.onerror = (err) => {
+      onError(err);
+    };
+  }
+
+  return () => {
+    eventSource.close();
+  };
 }

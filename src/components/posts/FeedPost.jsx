@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { BadgeCheck, Heart, MessageCircle, Pencil, Plus, Repeat2 } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { BadgeCheck, Heart, MessageCircle, Pencil, Plus, Repeat2, Trash2 } from 'lucide-react';
 import ArtworkImage from '../common/ArtworkImage.jsx';
+import PostImageViewer from './PostImageViewer.jsx';
 import Avatar from '../common/Avatar.jsx';
 import AuthenticityBadge from '../attribution/AuthenticityBadge.jsx';
 import AttributionLabel from '../attribution/AttributionLabel.jsx';
 import { usePosts } from '../../hooks/usePosts.js';
 import { getCategoryLabel } from '../../data/categories.js';
-import { CURRENT_USER_ID } from '../../data/mockCreators.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { postsApiEnabled } from '../../services/postService.js';
 import { cleanHandle, resolveAuthor } from '../../utils/creators.js';
@@ -15,6 +15,7 @@ import { formatDate } from '../../utils/format.js';
 import '../../styles/HomeFeed.css';
 
 export default function FeedPost({ post }) {
+  const location = useLocation();
   const { creatorsById, commentsByPostId, likedIds, commentCounts, loadedCommentPosts, toggleLike, toggleRepost, loadComments, addComment, deleteComment } = usePosts();
   const { user } = useAuth();
   const [text, setText] = useState('');
@@ -22,14 +23,18 @@ export default function FeedPost({ post }) {
   const [likeError, setLikeError] = useState('');
   const [repostError, setRepostError] = useState('');
   const [commentLoadError, setCommentLoadError] = useState('');
+  const [deletingCommentIds, setDeletingCommentIds] = useState(() => new Set());
+  const [commentDeleteErrors, setCommentDeleteErrors] = useState({});
   const [sending, setSending] = useState(false);
   const [liking, setLiking] = useState(false);
   const [reposting, setReposting] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const inputRef = useRef(null);
+  const pendingCommentDeletes = useRef(new Set());
 
-  const creator = creatorsById.get(post.creatorId);
+  const creator = creatorsById.get(post.creatorId) ?? post.creator ?? null;
   const reposter = post.repostedBy
     ? creatorsById.get(post.repostedBy.id) ?? {
       id: post.repostedBy.id,
@@ -39,7 +44,7 @@ export default function FeedPost({ post }) {
     }
     : null;
   const liked = likedIds.has(post.id);
-  const isOwn = postsApiEnabled ? post.creatorId === user?.id : post.creatorId === CURRENT_USER_ID;
+  const isOwn = Boolean(user?.id && post.creatorId === user.id);
   const verified = post.authenticity?.verificationStatus === 'verified';
   const handle = cleanHandle(creator);
 
@@ -105,6 +110,32 @@ export default function FeedPost({ post }) {
     }
   };
 
+  const removeComment = async (commentId) => {
+    if (pendingCommentDeletes.current.has(commentId)) return;
+    pendingCommentDeletes.current.add(commentId);
+    setDeletingCommentIds((current) => new Set(current).add(commentId));
+    setCommentDeleteErrors((current) => {
+      const next = { ...current };
+      delete next[commentId];
+      return next;
+    });
+    try {
+      await deleteComment(post.id, commentId);
+    } catch (requestError) {
+      setCommentDeleteErrors((current) => ({
+        ...current,
+        [commentId]: requestError.message || 'Could not delete this comment. Please try again.',
+      }));
+    } finally {
+      pendingCommentDeletes.current.delete(commentId);
+      setDeletingCommentIds((current) => {
+        const next = new Set(current);
+        next.delete(commentId);
+        return next;
+      });
+    }
+  };
+
   return (
     <article className="fpost">
       {reposter && (
@@ -130,15 +161,21 @@ export default function FeedPost({ post }) {
           </span>
         </Link>
         {isOwn && (
-          <Link to={`/post/${post.id}/edit`} className="fpost__edit" aria-label={`Edit ${post.title}`}>
+          <Link
+            to={`/post/${post.id}/edit`}
+            state={{ returnTo: `${location.pathname}${location.search}${location.hash}` }}
+            className="fpost__edit"
+            aria-label={`Edit ${post.title}`}
+          >
             <Pencil size={16} aria-hidden="true" /> Edit
           </Link>
         )}
       </header>
 
-      <Link to={`/post/${post.id}`} className="fpost__media" aria-label={`Open “${post.title}”`}>
+      <button type="button" className="fpost__media" aria-label={`View image for ${post.title}`} onClick={() => setImageViewerOpen(true)}>
         <ArtworkImage post={post} />
-      </Link>
+      </button>
+      {imageViewerOpen && <PostImageViewer post={post} creator={creator} onClose={() => setImageViewerOpen(false)} />}
 
       <div className="fpost__bar">
         <button
@@ -201,12 +238,23 @@ export default function FeedPost({ post }) {
                   {authorUsername
                     ? <Link to={`/profile/${authorUsername}`} className="fpost__cname">{authorName}</Link>
                     : <strong className="fpost__cname">{authorName}</strong>}{' '}
-                  <span>{c.text}</span>
+                  <span className="fpost__c-text">{c.text}</span>
                   <small className="muted">{formatDate(c.createdAt, navigator.language)}</small>
                   {user?.id === (c.userId ?? c.authorId) && (
-                    <button type="button" className="fpost__all" onClick={async () => {
-                      try { await deleteComment(post.id, c.id); } catch (requestError) { setError(requestError.message); }
-                    }}>Delete</button>
+                    <button
+                      type="button"
+                      className="comment-delete"
+                      onClick={() => removeComment(c.id)}
+                      disabled={deletingCommentIds.has(c.id)}
+                      aria-label={deletingCommentIds.has(c.id) ? 'Deleting comment' : `Delete comment by ${authorName}`}
+                      aria-busy={deletingCommentIds.has(c.id)}
+                      title={deletingCommentIds.has(c.id) ? 'Deleting comment…' : 'Delete comment'}
+                    >
+                      <Trash2 size={15} aria-hidden="true" />
+                    </button>
+                  )}
+                  {commentDeleteErrors[c.id] && (
+                    <span className="fpost__c-delete-error" role="alert">{commentDeleteErrors[c.id]}</span>
                   )}
                 </li>
               );

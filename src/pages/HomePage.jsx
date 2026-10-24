@@ -5,10 +5,8 @@ import Avatar from "../components/common/Avatar.jsx";
 import FeedPost from "../components/posts/FeedPost.jsx";
 import { usePosts } from "../hooks/usePosts.js";
 import { CATEGORIES } from "../data/categories.js";
-import { CURRENT_USER_ID } from "../data/mockCreators.js";
 import { filterPosts, SORT_OPTIONS } from "../utils/filters.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { postsApiEnabled } from "../services/postService.js";
 import "../styles/layout.css";
 import "../styles/LandingPage.css";
 import "../styles/HomeFeed.css";
@@ -141,7 +139,7 @@ function Hero() {
 function StoryRail() {
   const { creators } = usePosts();
   const { user } = useAuth();
-  const currentId = postsApiEnabled ? user?.id : user?.id ?? CURRENT_USER_ID;
+  const currentId = user?.id;
   const others = creators.filter((c) => c.id !== currentId).slice(0, 6);
 
   return (

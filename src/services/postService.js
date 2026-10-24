@@ -159,17 +159,17 @@ export async function updatePost(postId, changes) {
 export async function deletePost(postId) {
   if (postsApiEnabled) {
     const { csrfToken } = await getCsrfToken();
-    await apiRequest(`/api/posts/${encodeURIComponent(postId)}`, {
+    return apiRequest(`/api/posts/${encodeURIComponent(postId)}`, {
       method: 'DELETE',
       headers: { 'X-CSRF-Token': csrfToken },
     });
-    return;
   }
   await delay();
   const existing = loadPosts().find((p) => p.id === postId);
   if (!existing) throw new Error('This work no longer exists.');
   if (existing.creatorId !== CURRENT_USER_ID) throw new Error('You can only delete your own works.');
   savePosts(loadPosts().filter((p) => p.id !== postId));
+  return { cleanupPending: false };
 }
 
 export async function toggleLike(postId, likedByMe) {

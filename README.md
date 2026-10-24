@@ -57,8 +57,8 @@ edit form; direct profile URLs then use
 usernames. Post endpoints are `GET /api/posts?page=1&limit=12`,
 `GET /api/posts/:postId`, authenticated `POST /api/posts`,
 authenticated `PATCH /api/posts/:postId`, and authenticated `DELETE /api/posts/:postId`.
-Mutations require the session-bound CSRF token and exact allowed `Origin`. Post deletion is soft
-deletion. Social APIs are `POST`/`DELETE /api/posts/:postId/like`,
+Mutations require the session-bound CSRF token and exact allowed `Origin`. Post deletion is permanent and owner-only.
+Social APIs are `POST`/`DELETE /api/posts/:postId/like`,
 `GET`/`POST /api/posts/:postId/comments`, `DELETE /api/posts/:postId/comments/:commentId`,
 `POST`/`DELETE /api/posts/:postId/repost`, and `GET /api/posts/:postId/inspired-works`.
 Notifications use authenticated `GET /api/notifications?page=1&limit=20`,
@@ -74,8 +74,10 @@ notifications. With the API URL unset, the broader prototype still uses mock pos
 profile pages; notifications require the backend and have no mock fallback.
 Generate a session secret locally with
 `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64'))"`.
-Posts are soft-deleted using `deleted_at`; their source-post reference is retained so inspired
-works can still show attribution when a source is no longer available.
+Post deletion transactionally removes likes, comments, and reposts. Inspired works retain their
+attribution note while the deleted source reference is detached. Notifications retain their history
+with the post reference cleared. Tracked Cloudinary assets are deleted or remain in a durable
+retry queue; legacy assets without stored public IDs require manual cleanup.
 
 `npm test` uses controlled in-memory repositories and session stores for route flows, not a real
 PostgreSQL database or Cloudinary account; the database health test uses an intentionally

@@ -8,6 +8,7 @@ import type {
   PostUpdates,
 } from '../repositories/post.repository.js';
 import type { ImageStorage } from '../services/cloudinaryImageStorage.js';
+import { cloudinaryPublicIdFor } from '../services/cloudinaryImageStorage.js';
 import { verifyUploadedMedia } from './uploads.routes.js';
 import type { SocialRepository } from '../repositories/social.repository.js';
 
@@ -109,11 +110,8 @@ export function createPostsRouter(
       return;
     }
     try {
-      if (!(await verifyUploadedMedia(imageStorage, request.session.userId!, input.media))) {
-        response.status(400).json({ status: 'error', message: 'An uploaded image is invalid or does not belong to your account.' });
-        return;
-      }
-      const post = await posts.create(input);
+      input.media = withStoredPublicIds(input.media, request.session.userId!);
+      const post = await posts.create(input, () => verifyUploadedMedia(imageStorage, request.session.userId!, input.media));
       const stats = await social.getPostStats([post.id], request.session.userId!);
       response.status(201).json({ status: 'ok', post: { ...post, ...stats.get(post.id) } });
     } catch (error) {
@@ -123,6 +121,10 @@ export function createPostsRouter(
       }
       if (isConstraintError(error)) {
         response.status(400).json({ status: 'error', message: 'Post data violates a schema constraint' });
+        return;
+      }
+      if (isInvalidUploadedMedia(error)) {
+        response.status(400).json({ status: 'error', message: 'An uploaded image is invalid or does not belong to your account.' });
         return;
       }
       next(error);
@@ -141,11 +143,15 @@ export function createPostsRouter(
       return;
     }
     try {
-      if (updates.media && !(await verifyUploadedMedia(imageStorage, request.session.userId!, updates.media))) {
-        response.status(400).json({ status: 'error', message: 'An uploaded image is invalid or does not belong to your account.' });
-        return;
-      }
-      const post = await posts.update(postId, request.session.userId!, updates);
+      if (updates.media) updates.media = withStoredPublicIds(updates.media, request.session.userId!);
+      const post = await posts.update(
+        postId,
+        request.session.userId!,
+        updates,
+        updates.media
+          ? () => verifyUploadedMedia(imageStorage, request.session.userId!, updates.media!)
+          : undefined,
+      );
       if (!post) {
         response.status(404).json({ status: 'error', message: 'Post not found' });
         return;
@@ -155,6 +161,10 @@ export function createPostsRouter(
     } catch (error) {
       if (isConstraintError(error)) {
         response.status(400).json({ status: 'error', message: 'Post data violates a schema constraint' });
+        return;
+      }
+      if (isInvalidUploadedMedia(error)) {
+        response.status(400).json({ status: 'error', message: 'An uploaded image is invalid or does not belong to your account.' });
         return;
       }
       next(error);
@@ -168,18 +178,64 @@ export function createPostsRouter(
       return;
     }
     try {
-      const deleted = await posts.delete(postId, request.session.userId!);
-      if (!deleted) {
+      const deletion = await posts.delete(postId, request.session.userId!);
+      if (!deletion.deleted) {
         response.status(404).json({ status: 'error', message: 'Post not found' });
         return;
       }
-      response.status(200).json({ status: 'ok', message: 'Post deleted' });
+      const failedPublicIds: string[] = [];
+      for (const publicId of deletion.cleanupPublicIds) {
+        try {
+          await imageStorage.deleteAsset(publicId);
+          await posts.completeMediaCleanup(publicId);
+        } catch (error) {
+          failedPublicIds.push(publicId);
+          await posts.recordMediaCleanupFailure(publicId, cleanupErrorName(error));
+          console.error('Cloudinary cleanup is pending for a deleted post asset.', {
+            publicId,
+            errorType: error instanceof Error ? error.name : 'UnknownError',
+          });
+        }
+      }
+      if (failedPublicIds.length || deletion.unresolvedMediaUrls.length) {
+        if (deletion.unresolvedMediaUrls.length) {
+          console.error('Legacy Cloudinary media is retained for manual cleanup because its public ID was not stored.', {
+            mediaCount: deletion.unresolvedMediaUrls.length,
+          });
+        }
+        response.status(202).json({
+          status: 'ok',
+          message: deletion.unresolvedMediaUrls.length
+            ? 'Post deleted, but legacy Cloudinary media without stored public IDs needs manual cleanup.'
+            : 'Post deleted, but Cloudinary media cleanup is pending.',
+          cleanupPending: true,
+        });
+        return;
+      }
+      response.status(200).json({
+        status: 'ok',
+        message: 'Post and its tracked media were permanently deleted.',
+        cleanupPending: false,
+      });
     } catch (error) {
       next(error);
     }
   });
 
   return router;
+}
+
+function withStoredPublicIds(media: PostMediaInput[], userId: string): PostMediaInput[] {
+  return media.map((item) => ({
+    ...item,
+    cloudinaryPublicId: item.type === 'image' && item.uploadId
+      ? cloudinaryPublicIdFor(userId, item.uploadId)
+      : null,
+  }));
+}
+
+function cleanupErrorName(error: unknown) {
+  return error instanceof Error ? error.name : 'UnknownError';
 }
 
 const requireAuthenticated: RequestHandler = (request, response, next) => {
@@ -282,9 +338,11 @@ function validateTags(value: unknown): string[] | null {
   return [...new Set(value.map((tag: string) => tag.trim().toLowerCase()))];
 }
 
+const MIN_MEDIA_FILES = 1;
+const MAX_MEDIA_FILES = 5;
+
 function validateMedia(value: unknown): PostMediaInput[] | null {
-  if (value === undefined || value === null) return [];
-  if (!Array.isArray(value) || value.length > 10) return null;
+  if (!Array.isArray(value) || value.length < MIN_MEDIA_FILES || value.length > MAX_MEDIA_FILES) return null;
   const media: PostMediaInput[] = [];
   for (const item of value) {
     if (!isRecord(item)) return null;
@@ -342,6 +400,10 @@ function isUuid(value: string): boolean {
 
 function isConstraintError(error: unknown): error is { code: string } {
   return isRecord(error) && typeof error.code === 'string' && error.code === '23514';
+}
+
+function isInvalidUploadedMedia(error: unknown): error is { code: string } {
+  return isRecord(error) && error.code === 'INVALID_UPLOADED_MEDIA';
 }
 
 function isSourceMissing(error: unknown): boolean {

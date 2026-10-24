@@ -154,6 +154,14 @@ export function createSocialRepository(pool: Pick<Pool, 'query'>): SocialReposit
              SELECT $3, p.user_id, i.user_id, 'like', i.post_id
              FROM inserted i JOIN posts p ON p.id = i.post_id
              WHERE p.user_id <> i.user_id
+               AND NOT EXISTS (
+                 SELECT 1 FROM notifications n
+                 WHERE n.recipient_id = p.user_id
+                   AND n.actor_id = i.user_id
+                   AND n.event_type = 'like'
+                   AND n.post_id = i.post_id
+                   AND n.read_at IS NULL
+               )
              RETURNING id
            )
            SELECT post_id FROM inserted`,

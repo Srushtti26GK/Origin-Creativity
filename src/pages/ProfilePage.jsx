@@ -3,11 +3,12 @@ import { Link, useParams } from 'react-router-dom';
 import { Heart, ImageOff, LayoutGrid, List, MessageCircle, Plus, UserX } from 'lucide-react';
 import Avatar from '../components/common/Avatar.jsx';
 import ArtworkImage from '../components/common/ArtworkImage.jsx';
+import PostImageViewer from '../components/posts/PostImageViewer.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import PostGrid from '../components/posts/PostGrid.jsx';
 import FeedPost from '../components/posts/FeedPost.jsx';
 import { usePosts } from '../hooks/usePosts.js';
-import { CURRENT_USER_ID } from '../data/mockCreators.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { profileApiEnabled } from '../services/profileApi.js';
 import ApiProfilePage from './ApiProfilePage.jsx';
 import '../styles/pages.css';
@@ -28,13 +29,15 @@ export default function ProfilePage() {
 }
 
 function MockProfilePage({ creatorId }) {
+  const { user } = useAuth();
   const { status, posts, creatorsById, commentCounts } = usePosts();
   const [tab, setTab] = useState('works');
   const [view, setView] = useState('feed'); // 'feed' | 'grid'
+  const [imageViewerPost, setImageViewerPost] = useState(null);
   const tabRefs = useRef([]);
 
   const creator = creatorsById.get(creatorId);
-  const isOwn = creatorId === CURRENT_USER_ID;
+  const isOwn = user?.id ? creatorId === user.id : false;
 
   const works = useMemo(() => posts.filter((p) => p.creatorId === creatorId), [posts, creatorId]);
   const inspiredWorks = useMemo(() => works.filter((p) => p.workType === 'inspired'), [works]);
@@ -150,18 +153,19 @@ function MockProfilePage({ creatorId }) {
           <ul className="explore-grid">
             {shown.map((post) => (
               <li key={post.id}>
-                <Link to={`/post/${post.id}`} className="explore-tile" aria-label={`Open “${post.title}”`}>
+                <button type="button" className="explore-tile" aria-label={`View image for ${post.title}`} onClick={() => setImageViewerPost(post)}>
                   <ArtworkImage post={post} />
                   <span className="explore-tile__overlay">
                     <span><Heart size={18} aria-hidden="true" /> {post.likesCount}</span>
                     <span><MessageCircle size={18} aria-hidden="true" /> {commentCounts[post.id] ?? 0}</span>
                   </span>
-                </Link>
+                </button>
               </li>
             ))}
           </ul>
         )}
       </div>
+      {imageViewerPost && <PostImageViewer post={imageViewerPost} creator={creator} onClose={() => setImageViewerPost(null)} />}
     </div>
   );
 }

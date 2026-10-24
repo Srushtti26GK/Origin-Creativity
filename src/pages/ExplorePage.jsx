@@ -1,9 +1,11 @@
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { Heart, MessageCircle, Repeat2, SearchX } from 'lucide-react';
 import SearchBar from '../components/common/SearchBar.jsx';
 import CategoryFilter from '../components/common/CategoryFilter.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import ArtworkImage from '../components/common/ArtworkImage.jsx';
+import PostImageViewer from '../components/posts/PostImageViewer.jsx';
 import { usePosts } from '../hooks/usePosts.js';
 import { filterPosts, SORT_OPTIONS } from '../utils/filters.js';
 import '../styles/pages.css';
@@ -11,6 +13,7 @@ import '../styles/ExplorePage.css';
 
 // Filters live in the URL (?q=&category=&sort=) so results are shareable and survive refresh.
 export default function ExplorePage() {
+  const [imageViewerPost, setImageViewerPost] = useState(null);
   const {
     status, posts, creatorsById, commentCounts, pagination,
     loadingMore, loadMoreError, loadMorePosts,
@@ -68,14 +71,14 @@ export default function ExplorePage() {
             <ul className="explore-grid">
               {results.map((post) => (
                 <li key={post.feedEntryId ?? post.id}>
-                  <Link to={`/post/${post.id}`} className="explore-tile" aria-label={`Open “${post.title}”`}>
+                  <button type="button" className="explore-tile" aria-label={`View image for ${post.title}`} onClick={() => setImageViewerPost(post)}>
                     <ArtworkImage post={post} />
                     <span className="explore-tile__overlay">
                       <span><Heart size={18} aria-hidden="true" /> {post.likesCount ?? '—'}</span>
                       <span><MessageCircle size={18} aria-hidden="true" /> {commentCounts[post.id] ?? '—'}</span>
                       <span><Repeat2 size={18} aria-hidden="true" /> {post.repostsCount ?? '—'}</span>
                     </span>
-                  </Link>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -98,6 +101,7 @@ export default function ExplorePage() {
           )}
         </>
       )}
+      {imageViewerPost && <PostImageViewer post={imageViewerPost} creator={creatorsById.get(imageViewerPost.creatorId)} onClose={() => setImageViewerPost(null)} />}
     </div>
   );
 }

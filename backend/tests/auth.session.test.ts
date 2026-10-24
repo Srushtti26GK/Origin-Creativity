@@ -283,6 +283,69 @@ test('login rate limiter returns 429 after repeated invalid credentials', async 
   }
 });
 
+test('login rate limit applies across rotating identifiers from one IP', async () => {
+  const app = await startApp(createUsers());
+
+  try {
+    const csrfResponse = await fetch(`${app.baseUrl}/api/auth/csrf`);
+    const csrf = await csrfResponse.json() as { csrfToken: string };
+    const cookie = sessionCookie(csrfResponse);
+    assert.ok(cookie);
+
+    let lastResponse: Response | undefined;
+    for (let attempt = 0; attempt < 31; attempt += 1) {
+      lastResponse = await fetch(`${app.baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin,
+          cookie,
+          'x-csrf-token': csrf.csrfToken,
+        },
+        body: JSON.stringify({
+          identifier: `rotating-${attempt}@example.com`,
+          password,
+        }),
+      });
+    }
+
+    assert.equal(lastResponse?.status, 429);
+    assert.ok(Number(lastResponse?.headers.get('retry-after')) > 0);
+  } finally {
+    await app.close();
+  }
+});
+
+test('signup rate limiter returns 429 after repeated attempts from one IP', async () => {
+  const app = await startApp(createUsers());
+
+  try {
+    const csrfResponse = await fetch(`${app.baseUrl}/api/auth/csrf`);
+    const csrf = await csrfResponse.json() as { csrfToken: string };
+    const cookie = sessionCookie(csrfResponse);
+    assert.ok(cookie);
+
+    let lastResponse: Response | undefined;
+    for (let attempt = 0; attempt < 11; attempt += 1) {
+      lastResponse = await fetch(`${app.baseUrl}/api/auth/signup`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin,
+          cookie,
+          'x-csrf-token': csrf.csrfToken,
+        },
+        body: JSON.stringify({}),
+      });
+    }
+
+    assert.equal(lastResponse?.status, 429);
+    assert.ok(Number(lastResponse?.headers.get('retry-after')) > 0);
+  } finally {
+    await app.close();
+  }
+});
+
 test('malformed JSON is rejected as a client error', async () => {
   const app = await startApp(createUsers());
 

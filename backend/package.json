@@ -12,7 +12,8 @@
     "test": "tsx --test tests/*.test.ts",
     "db:check": "tsx src/scripts/checkDatabase.ts",
     "db:migrate": "tsx src/scripts/migrate.ts up",
-    "db:rollback": "tsx src/scripts/migrate.ts down"
+    "db:rollback": "tsx src/scripts/migrate.ts down",
+    "media:cleanup": "tsx src/scripts/retryCloudinaryCleanup.ts"
   },
   "dependencies": {
     "argon2": "^0.45.1",

@@ -5,7 +5,7 @@ import EmptyState from '../components/common/EmptyState.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { API_BASE_URL } from '../services/apiConfig.js';
-import { getNotificationsPage, markAllNotificationsRead, markNotificationRead } from '../services/notificationService.js';
+import { getNotificationsPage, markAllNotificationsRead, markNotificationRead, subscribeToNotificationEvents } from '../services/notificationService.js';
 import '../styles/pages.css';
 import '../styles/NotificationsPage.css';
 
@@ -63,6 +63,18 @@ export default function NotificationsPage() {
     void loadNotifications(controller.signal);
     return () => controller.abort();
   }, [authLoading, loadNotifications]);
+
+  useEffect(() => {
+    if (authLoading || !user) return undefined;
+    const unsubscribe = subscribeToNotificationEvents((newNotification) => {
+      setItems((prev) => {
+        if (prev.some((item) => item.id === newNotification.id)) return prev;
+        return [newNotification, ...prev];
+      });
+      setUnreadCount((count) => count + 1);
+    });
+    return unsubscribe;
+  }, [authLoading, user]);
 
   const visible = useMemo(
     () => tab === 'all' ? items : items.filter((item) => item.eventType === tab),

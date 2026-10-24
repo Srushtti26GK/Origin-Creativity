@@ -69,8 +69,116 @@
   font-weight: 600;
 }
 .profile__handle { margin: var(--space-1) 0 0; color: var(--color-muted); }
+.profile__connection-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.profile__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.profile__badge--mutual {
+  border-color: #9a5b3a;
+  color: #9a5b3a;
+  background: rgb(154 91 58 / 0.08);
+}
+.profile__mutual-note {
+  margin: var(--space-1) 0 0;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
 .profile__bio { max-width: 60ch; margin: var(--space-3) 0 0; overflow-wrap: anywhere; line-height: 1.55; }
 .profile__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+
+/* Recommendations Card */
+.profile__recommendations {
+  margin-bottom: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.profile__recommendations-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.profile__rec-icon {
+  color: #9a5b3a;
+}
+.profile__recommendations-head h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.profile__recommendations-head p {
+ margin: 0;
+  font-size: 0.82rem;
+}
+.profile__recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.profile__rec-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-4);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+.profile__rec-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  gap: 4px;
+}
+.profile__rec-link strong {
+  margin-top: var(--space-1);
+  font-size: 0.95rem;
+}
+.profile__rec-link small {
+  color: var(--color-muted);
+  font-size: 0.8rem;
+}
+.profile__rec-explanation {
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: 0.78rem;
+  color: var(--color-muted);
+  line-height: 1.35;
+  flex: 1;
+}
+.profile__rec-btn {
+  width: 100%;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  font-size: 0.8rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
 
 /* Works / Inspired in the top-right corner */
 .profile__stats { display: flex; flex: none; gap: var(--space-5); margin: 0; }

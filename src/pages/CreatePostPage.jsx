@@ -76,8 +76,8 @@ export default function CreatePostPage() {
   const handleApiFiles = (event) => {
     const picked = [...(event.target.files ?? [])];
     event.target.value = '';
-    if (selectedImages.length + picked.length > 10) {
-      setErrors((previous) => ({ ...previous, media: 'You can attach up to 10 images.' }));
+    if (selectedImages.length + picked.length > 5) {
+      setErrors((previous) => ({ ...previous, media: 'You can attach a maximum of 5 images per post.' }));
       return;
     }
     const valid = [];
@@ -90,7 +90,7 @@ export default function CreatePostPage() {
     setSelectedImages((previous) => [...previous, ...valid]);
     setErrors((previous) => ({
       ...previous,
-      media: errorsForFiles.join(' '),
+      media: errorsForFiles.length > 0 ? errorsForFiles.join(' ') : undefined,
     }));
   };
 
@@ -100,15 +100,18 @@ export default function CreatePostPage() {
       if (removed) URL.revokeObjectURL(removed.previewUrl);
       return previous.filter((item) => item.uploadId !== uploadId);
     });
+    setErrors((prev) => ({ ...prev, media: undefined }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const mediaCount = API_BASE_URL ? selectedImages.length : (previewUrl ? 1 : 0);
     const found = validatePostForm({
       ...form,
       declaration: form.declared,
-      hasMedia: Boolean(API_BASE_URL ? selectedImages.length : previewUrl),
-    }, { mode: 'create', requireMedia: false });
+      mediaCount,
+      hasMedia: mediaCount > 0,
+    }, { mode: 'create', requireMedia: true });
     setErrors(found);
     if (Object.keys(found).length) return;
 
@@ -146,11 +149,11 @@ export default function CreatePostPage() {
           }
         }
       } else if (previewUrl) {
-        payload.media = {
+        payload.media = [{
           type: 'image',
           url: previewUrl,
           alt: `Artwork titled ${form.title.trim()}`,
-        };
+        }];
       }
       setCreated(await createPost(payload));
     } catch (error) {
@@ -242,9 +245,19 @@ export default function CreatePostPage() {
             <span className="form-legend">Artwork</span>
             {API_BASE_URL ? (
               <>
-                <label className="dropzone" htmlFor="api-images">
-                  <span><strong>Add images from your device</strong> · optional, up to 10 files</span>
-                  <input id="api-images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={handleApiFiles} />
+                <label className={`dropzone${selectedImages.length >= 5 ? ' is-disabled' : ''}`} htmlFor="api-images">
+                  <span>
+                    <strong>{selectedImages.length >= 5 ? 'Maximum 5 files reached' : 'Add artwork images from your device'}</strong>
+                    {' '}· 1 to 5 files ({selectedImages.length} of 5 attached)
+                  </span>
+                  <input
+                    id="api-images"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    multiple
+                    disabled={selectedImages.length >= 5}
+                    onChange={handleApiFiles}
+                  />
                 </label>
                 {selectedImages.length > 0 && (
                   <ul className="upload-preview-grid" aria-label="Selected images">
@@ -261,7 +274,7 @@ export default function CreatePostPage() {
                     ))}
                   </ul>
                 )}
-                <p className="form-hint">JPEG, PNG, WebP, or GIF. Maximum 5 MB per image. Text-only posts are supported.</p>
+                <p className="form-hint">JPEG, PNG, WebP, or GIF. Up to 5 MB per file. Minimum 1, maximum 5 files.</p>
               </>
             ) : previewUrl ? (
               <div className="media-preview">

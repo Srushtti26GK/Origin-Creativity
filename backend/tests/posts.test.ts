@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import argon2 from 'argon2';
+import { createHash } from 'node:crypto';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { after, test } from 'node:test';
@@ -10,6 +11,7 @@ import type {
   PostUpdates,
 } from '../src/repositories/post.repository.js';
 import type { SocialRepository, PostSocialStats } from '../src/repositories/social.repository.js';
+import type { ImageStorage } from '../src/services/cloudinaryImageStorage.js';
 import type {
   NewUser,
   ProfileUpdates,
@@ -96,9 +98,19 @@ function postRecord(ownerId = userId, id = postId): PostRecord {
 }
 
 function createPosts(ownerId = userId): PostRepository & {
-  calls: { created?: NewPost; updated?: { id: string; userId: string; changes: PostUpdates }; deleted?: { id: string; userId: string } };
+  calls: {
+    created?: NewPost;
+    updated?: { id: string; userId: string; changes: PostUpdates };
+    deleted?: { id: string; userId: string };
+    cleanupFailure?: { publicId: string; reason: string };
+  };
 } {
-  const calls: { created?: NewPost; updated?: { id: string; userId: string; changes: PostUpdates }; deleted?: { id: string; userId: string } } = {};
+  const calls: {
+    created?: NewPost;
+    updated?: { id: string; userId: string; changes: PostUpdates };
+    deleted?: { id: string; userId: string };
+    cleanupFailure?: { publicId: string; reason: string };
+  } = {};
   const stored = new Map([[postId, postRecord(ownerId)]]);
   return {
     calls,
@@ -110,7 +122,10 @@ function createPosts(ownerId = userId): PostRepository & {
     async listInspiredWorks(sourceId) {
       return [...stored.values()].filter((post) => post.sourcePostId === sourceId);
     },
-    async create(input) {
+    async create(input, verifyMedia) {
+      if (verifyMedia && !(await verifyMedia())) {
+        throw Object.assign(new Error('Invalid media reference'), { code: 'INVALID_UPLOADED_MEDIA' });
+      }
       calls.created = input;
       if (input.sourcePostId && !stored.has(input.sourcePostId)) {
         throw Object.assign(new Error('Source post not found'), { code: 'SOURCE_POST_NOT_FOUND' });
@@ -125,7 +140,10 @@ function createPosts(ownerId = userId): PostRepository & {
       stored.set(created.id, created);
       return created;
     },
-    async update(id, currentUserId, changes) {
+    async update(id, currentUserId, changes, verifyMedia) {
+      if (verifyMedia && !(await verifyMedia())) {
+        throw Object.assign(new Error('Invalid media reference'), { code: 'INVALID_UPLOADED_MEDIA' });
+      }
       calls.updated = { id, userId: currentUserId, changes };
       const existing = stored.get(id);
       if (!existing || existing.creatorId !== currentUserId) return null;
@@ -136,10 +154,16 @@ function createPosts(ownerId = userId): PostRepository & {
     async delete(id, currentUserId) {
       calls.deleted = { id, userId: currentUserId };
       const existing = stored.get(id);
-      if (!existing || existing.creatorId !== currentUserId) return false;
+      if (!existing || existing.creatorId !== currentUserId) {
+        return { deleted: false, cleanupPublicIds: [], unresolvedMediaUrls: [] };
+      }
       stored.delete(id);
-      return true;
+      return { deleted: true, cleanupPublicIds: [], unresolvedMediaUrls: [] };
     },
+    async completeMediaCleanup() {},
+    async recordMediaCleanupFailure(publicId, reason) { calls.cleanupFailure = { publicId, reason }; },
+    async listPendingMediaCleanup() { return []; },
+    async listUnresolvedMediaCleanup() { return []; },
   };
 }
 
@@ -164,10 +188,16 @@ function createSocial(): SocialRepository {
   };
 }
 
-async function startApp(posts: PostRepository) {
+async function startApp(posts: PostRepository, imageStorage?: ImageStorage) {
   const session = await import('express-session').then(({ default: expressSession }) =>
     new expressSession.MemoryStore());
-  const server = createServer(createApp({ users: createUsers(), posts, social: createSocial(), sessionStore: session }));
+  const server = createServer(createApp({
+    users: createUsers(),
+    posts,
+    ...(imageStorage ? { imageStorage } : {}),
+    social: createSocial(),
+    sessionStore: session,
+  }));
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address() as AddressInfo;
   return {
@@ -193,7 +223,7 @@ async function authenticate(baseUrl: string) {
     },
     body: JSON.stringify({ identifier: 'maker_one', password }),
   });
-  assert.equal(loginResponse.status, 200);
+  assert.equal(loginResponse.status, 200, await loginResponse.clone().text());
   const loggedIn = await loginResponse.json() as { csrfToken: string };
   const cookie = loginResponse.headers.get('set-cookie')?.split(';')[0];
   assert.ok(cookie);
@@ -244,7 +274,13 @@ test('public post listing paginates and returns creator profile and timestamp da
 
 test('post creation requires authentication and valid CSRF, and uses session ownership', async () => {
   const repository = createPosts();
-  const app = await startApp(repository);
+  const storage: ImageStorage = {
+    configured: true,
+    async upload(owner, uploadId) { return { uploadId, url: 'https://example.test/upload.jpg' }; },
+    async verifyOwned() { return true; },
+    async deleteAsset() {},
+  };
+  const app = await startApp(repository, storage);
   try {
     const csrfResponse = await fetch(`${app.baseUrl}/api/auth/csrf`);
     const { csrfToken } = await csrfResponse.json() as { csrfToken: string };
@@ -275,6 +311,30 @@ test('post creation requires authentication and valid CSRF, and uses session own
     assert.equal(result.post.creatorId, userId);
     assert.equal(repository.calls.created?.userId, userId);
     assert.equal(repository.calls.created?.media[0].url, validPost.media[0].url);
+
+    const uploadIds = [
+      '423e4567-e89b-42d3-a456-426614174000',
+      '423e4567-e89b-42d3-a456-426614174001',
+    ];
+    const multipleImages = await fetch(`${app.baseUrl}/api/posts`, {
+      method: 'POST',
+      headers: mutationHeaders(auth),
+      body: JSON.stringify({
+        ...validPost,
+        media: uploadIds.map((uploadId) => ({
+          type: 'image',
+          url: `https://example.test/${uploadId}.jpg`,
+          uploadId,
+        })),
+      }),
+    });
+    assert.equal(multipleImages.status, 201);
+    assert.deepEqual(
+      repository.calls.created?.media.map((media) => media.cloudinaryPublicId),
+      uploadIds.map((uploadId) => (
+        `origin-creativity/${userId}/${createHash('sha256').update(`${userId}:${uploadId}`).digest('hex')}`
+      )),
+    );
   } finally {
     await app.close();
   }
@@ -302,6 +362,42 @@ test('post creation rejects invalid categories, unsafe media URLs, and missing C
       body: JSON.stringify(validPost),
     });
     assert.equal(missingCsrf.status, 403);
+
+    // 0 files: rejected
+    const zeroFiles = await fetch(`${app.baseUrl}/api/posts`, {
+      method: 'POST',
+      headers: mutationHeaders(auth),
+      body: JSON.stringify({ ...validPost, media: [] }),
+    });
+    assert.equal(zeroFiles.status, 400);
+
+    // 5 files: accepted
+    const fiveMedia = Array.from({ length: 5 }, (_, i) => ({
+      type: 'image',
+      url: `https://example.test/image-${i + 1}.jpg`,
+      alt: `Image ${i + 1}`,
+      aspect: 'landscape',
+    }));
+    const fiveFiles = await fetch(`${app.baseUrl}/api/posts`, {
+      method: 'POST',
+      headers: mutationHeaders(auth),
+      body: JSON.stringify({ ...validPost, media: fiveMedia }),
+    });
+    assert.equal(fiveFiles.status, 201);
+
+    // 6 files: rejected
+    const sixMedia = Array.from({ length: 6 }, (_, i) => ({
+      type: 'image',
+      url: `https://example.test/image-${i + 1}.jpg`,
+      alt: `Image ${i + 1}`,
+      aspect: 'landscape',
+    }));
+    const sixFiles = await fetch(`${app.baseUrl}/api/posts`, {
+      method: 'POST',
+      headers: mutationHeaders(auth),
+      body: JSON.stringify({ ...validPost, media: sixMedia }),
+    });
+    assert.equal(sixFiles.status, 400);
   } finally {
     await app.close();
   }
@@ -337,6 +433,32 @@ test('recreate creates a separate user-owned work with source attribution and re
       body: JSON.stringify({ ...inspired, sourcePostId: otherUserId }),
     });
     assert.equal(missingSource.status, 404);
+  } finally {
+    await app.close();
+  }
+});
+
+test('post creation rejects an uploaded image that is expired or not owned by the session user', async () => {
+  const repository = createPosts();
+  const storage: ImageStorage = {
+    configured: true,
+    async upload(owner, uploadId) { return { uploadId, url: 'https://example.test/upload.jpg' }; },
+    async verifyOwned() { return false; },
+    async deleteAsset() {},
+  };
+  const app = await startApp(repository, storage);
+  try {
+    const auth = await authenticate(app.baseUrl);
+    const response = await fetch(`${app.baseUrl}/api/posts`, {
+      method: 'POST',
+      headers: mutationHeaders(auth),
+      body: JSON.stringify({
+        ...validPost,
+        media: [{ ...validPost.media[0], uploadId: '523e4567-e89b-42d3-a456-426614174000' }],
+      }),
+    });
+    assert.equal(response.status, 400);
+    assert.equal(repository.calls.created, undefined);
   } finally {
     await app.close();
   }
@@ -381,7 +503,7 @@ test('post editing is authenticated and scoped to the session owner', async () =
   }
 });
 
-test('post deletion is authenticated, soft-deletes through repository, and is owner-only', async () => {
+test('post deletion is authenticated, permanently deletes through repository, and is owner-only', async () => {
   const repository = createPosts();
   const app = await startApp(repository);
   try {
@@ -398,6 +520,7 @@ test('post deletion is authenticated, soft-deletes through repository, and is ow
     });
     assert.equal(response.status, 200);
     assert.deepEqual(repository.calls.deleted, { id: postId, userId });
+    assert.equal(await repository.findById(postId), null);
 
     const otherOwnerApp = await startApp(createPosts(otherUserId));
     try {
@@ -410,6 +533,46 @@ test('post deletion is authenticated, soft-deletes through repository, and is ow
     } finally {
       await otherOwnerApp.close();
     }
+  } finally {
+    await app.close();
+  }
+});
+
+test('post deletion reports pending cleanup after attempting every tracked Cloudinary image', async () => {
+  const publicIds = ['origin-creativity/owner/first', 'origin-creativity/owner/second'];
+  const repository = createPosts();
+  const deletePost = repository.delete.bind(repository);
+  repository.delete = async (id, ownerId) => ({
+    ...(await deletePost(id, ownerId)),
+    cleanupPublicIds: publicIds,
+  });
+  const attempted: string[] = [];
+  const storage: ImageStorage = {
+    configured: true,
+    async upload(owner, uploadId) { return { uploadId, url: 'https://example.test/upload.jpg' }; },
+    async verifyOwned() { return true; },
+    async deleteAsset(publicId) {
+      attempted.push(publicId);
+      if (publicId === publicIds[1]) throw new Error('Provider unavailable');
+    },
+  };
+  const app = await startApp(repository, storage);
+  try {
+    const auth = await authenticate(app.baseUrl);
+    const response = await fetch(`${app.baseUrl}/api/posts/${postId}`, {
+      method: 'DELETE',
+      headers: mutationHeaders(auth),
+    });
+    const result = await response.json() as { cleanupPending: boolean; message: string };
+    assert.equal(response.status, 202);
+    assert.equal(result.cleanupPending, true);
+    assert.match(result.message, /cleanup is pending/i);
+    assert.deepEqual(attempted, publicIds);
+    assert.deepEqual(repository.calls.cleanupFailure, {
+      publicId: publicIds[1],
+      reason: 'Error',
+    });
+    assert.equal(await repository.findById(postId), null);
   } finally {
     await app.close();
   }

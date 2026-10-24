@@ -3,6 +3,7 @@ import type { Request } from 'express';
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from '../config/session.js';
 import { createCsrfProtection, createLogoutCsrfProtection, getOrCreateCsrfToken } from '../middleware/csrf.js';
 import { createLoginRateLimiter } from '../middleware/loginRateLimit.js';
+import { createSignupRateLimiter } from '../middleware/rateLimit.js';
 import type { UserRepository } from '../repositories/user.repository.js';
 import {
   DuplicateAccountError,
@@ -13,17 +14,21 @@ import {
   signup,
 } from '../services/auth.service.js';
 
-export function createAuthRouter(users: UserRepository, allowedOrigins: string[]) {
+export function createAuthRouter(
+  users: UserRepository,
+  allowedOrigins: string[],
+) {
   const router = Router();
   const requireCsrf = createCsrfProtection(allowedOrigins);
   const rateLimitLogin = createLoginRateLimiter();
-
+  const rateLimitLoginByIp = createLoginRateLimiter({ keyByIp: true, maxAttempts: 30 });
+  const rateLimitSignup = createSignupRateLimiter();
   router.get('/csrf', (request, response) => {
     request.session.csrfToken ??= getOrCreateCsrfToken();
     response.status(200).json({ status: 'ok', csrfToken: request.session.csrfToken });
   });
 
-  router.post('/signup', requireCsrf, async (request, response, next) => {
+  router.post('/signup', requireCsrf, rateLimitSignup, async (request, response, next) => {
     try {
       const user = await signup(request.body, users);
       response.status(201).json({ status: 'ok', user });
@@ -48,7 +53,7 @@ export function createAuthRouter(users: UserRepository, allowedOrigins: string[]
     }
   });
 
-  router.post('/login', requireCsrf, rateLimitLogin, async (request, response, next) => {
+  router.post('/login', requireCsrf, rateLimitLogin, rateLimitLoginByIp, async (request, response, next) => {
     try {
       const user = await login(request.body, users);
       await regenerateSession(request);

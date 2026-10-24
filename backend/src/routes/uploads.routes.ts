@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import type { RequestHandler } from 'express';
 import { createCsrfProtection } from '../middleware/csrf.js';
+import { createUploadRateLimiter } from '../middleware/rateLimit.js';
 import type { ImageStorage } from '../services/cloudinaryImageStorage.js';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -11,11 +12,13 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3
 export function createUploadsRouter(storage: ImageStorage, allowedOrigins: string[]) {
   const router = Router();
   const parseUpload = createUploadParser();
+  const rateLimitUploads = createUploadRateLimiter();
 
   router.post(
     '/images',
     requireAuthenticated,
     createCsrfProtection(allowedOrigins),
+    rateLimitUploads,
     parseUpload,
     async (request, response) => {
       const uploadId = request.get('idempotency-key');

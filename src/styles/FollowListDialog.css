@@ -6,24 +6,37 @@
   place-items: center;
   padding: 1rem;
   background: rgb(20 18 15 / 0.55);
+  backdrop-filter: blur(2px);
 }
 
 .follow-dialog {
-  width: min(100%, 480px);
-  max-height: min(80vh, 640px);
+  width: min(100%, 520px);
+  max-height: min(85vh, 680px);
   overflow: auto;
   padding: var(--space-4);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
-  box-shadow: var(--shadow-lift);
+  box-shadow: 0 16px 36px rgb(40 25 15 / 0.16);
 }
 
 .follow-dialog__header,
 .follow-dialog__pagination,
-.follow-dialog__user {
+.follow-dialog__user,
+.follow-dialog__item {
   display: flex;
   align-items: center;
+}
+
+.follow-dialog__item {
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid rgb(211 196 179 / 0.35);
+}
+
+.follow-dialog__item:last-child {
+  border-bottom: none;
 }
 
 .follow-dialog__header,
@@ -32,11 +45,55 @@
   gap: var(--space-3);
 }
 
-.follow-dialog__header h2 { margin: 0; }
-.follow-dialog__header .outline-btn { padding-inline: var(--space-3); }
-.follow-dialog__list { display: grid; gap: var(--space-2); margin-block: var(--space-4); }
-.follow-dialog__user { gap: var(--space-3); text-decoration: none; }
-.follow-dialog__user span { display: grid; }
-.follow-dialog__user small { color: var(--color-muted); }
+.follow-dialog__header h2 { margin: 0; font-size: 1.4rem; }
+.follow-dialog__header .outline-btn { padding-inline: var(--space-3); min-height: 36px; }
+.follow-dialog__list { display: grid; gap: var(--space-1); margin-block: var(--space-4); list-style: none; padding: 0; }
+.follow-dialog__user { gap: var(--space-3); text-decoration: none; color: inherit; min-width: 0; }
+.follow-dialog__user-meta { display: grid; min-width: 0; }
+.follow-dialog__user-meta strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.follow-dialog__user-meta small { color: var(--color-muted); }
+
+.follow-dialog__badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+.follow-dialog__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid var(--color-line);
+  background: var(--color-bg);
+  color: var(--color-ink);
+}
+
+.follow-dialog__badge--mutual {
+  border-color: #8c5d3b;
+  color: #8c5d3b;
+  background: rgb(140 93 59 / 0.08);
+}
+
+.follow-dialog__badge--follows-you {
+  color: var(--color-muted);
+}
+
+.follow-dialog__btn {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
 .follow-dialog__pagination { margin-top: var(--space-4); }
 .follow-dialog__backdrop:focus-within { outline: none; }

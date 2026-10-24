@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { UserCheck, Users, X } from 'lucide-react';
 import Avatar from '../common/Avatar.jsx';
-import { getFollowList } from '../../services/profileApi.js';
+import { followCreator, getFollowList, unfollowCreator } from '../../services/profileApi.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function FollowListDialog({ username, direction, onClose }) {
   const [users, setUsers] = useState([]);
@@ -10,6 +11,8 @@ export default function FollowListDialog({ username, direction, onClose }) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [actionLoading, setActionLoading] = useState({});
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +41,34 @@ export default function FollowListDialog({ username, direction, onClose }) {
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [onClose]);
 
+  const handleToggleFollow = async (targetUsername) => {
+    const targetUser = users.find((u) => u.username === targetUsername);
+    if (!targetUser) return;
+
+    setActionLoading((prev) => ({ ...prev, [targetUsername]: true }));
+    try {
+      if (targetUser.isFollowing) {
+        await unfollowCreator(targetUsername);
+        setUsers((prev) => prev.map((u) => (
+          u.username === targetUsername
+            ? { ...u, isFollowing: false, isMutual: false }
+            : u
+        )));
+      } else {
+        await followCreator(targetUsername);
+        setUsers((prev) => prev.map((u) => (
+          u.username === targetUsername
+            ? { ...u, isFollowing: true, isMutual: Boolean(u.followsYou) }
+            : u
+        )));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not update follow status.');
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [targetUsername]: false }));
+    }
+  };
+
   const title = direction === 'followers' ? 'Followers' : 'Following';
 
   return (
@@ -56,17 +87,48 @@ export default function FollowListDialog({ username, direction, onClose }) {
         {!loading && !error && users.length === 0 && <p className="muted">No {title.toLowerCase()} yet.</p>}
         {!loading && !error && users.length > 0 && (
           <ul className="follow-dialog__list">
-            {users.map((creator) => (
-              <li key={creator.id}>
-                <Link to={`/profile/${creator.username}`} onClick={onClose} className="follow-dialog__user">
-                  <Avatar creator={{ name: creator.displayName, avatarUrl: creator.avatarUrl }} size={42} />
-                  <span>
-                    <strong>{creator.displayName}</strong>
-                    <small>@{creator.username}</small>
-                  </span>
-                </Link>
-              </li>
-            ))}
+            {users.map((creator) => {
+              const isSelf = currentUser && currentUser.username === creator.username;
+              const isActioning = actionLoading[creator.username];
+              return (
+                <li key={creator.id} className="follow-dialog__item">
+                  <Link to={`/profile/${creator.username}`} onClick={onClose} className="follow-dialog__user">
+                    <Avatar creator={{ name: creator.displayName, avatarUrl: creator.avatarUrl }} size={42} />
+                    <span className="follow-dialog__user-meta">
+                      <strong>{creator.displayName}</strong>
+                      <small>@{creator.username}</small>
+                    </span>
+                  </Link>
+
+                  <div className="follow-dialog__badges">
+                    {creator.isMutual ? (
+                      <span className="follow-dialog__badge follow-dialog__badge--mutual" title="You follow each other">
+                        <Users size={12} aria-hidden="true" /> Mutual
+                      </span>
+                    ) : creator.followsYou ? (
+                      <span className="follow-dialog__badge follow-dialog__badge--follows-you">
+                        Follows you
+                      </span>
+                    ) : null}
+
+                    {currentUser && !isSelf && (
+                      <button
+                        type="button"
+                        className={creator.isFollowing ? 'outline-btn follow-dialog__btn' : 'solid-btn follow-dialog__btn'}
+                        onClick={() => handleToggleFollow(creator.username)}
+                        disabled={isActioning}
+                      >
+                        {isActioning
+                          ? '…'
+                          : creator.isFollowing
+                            ? 'Following'
+                            : 'Follow'}
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
         {pagination && pagination.totalPages > 1 && (

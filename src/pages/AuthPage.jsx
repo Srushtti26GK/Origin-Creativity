@@ -20,7 +20,7 @@ export default function AuthPage({ mode }) {
   const [form, setForm] = useState(EMPTY_SIGNUP);
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
-  const [success, setSuccess] = useState('');
+  const [success, setSuccess] = useState(location.state?.notice ?? '');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -32,9 +32,9 @@ export default function AuthPage({ mode }) {
   useEffect(() => {
     setFormError('');
     setFieldErrors({});
-    setSuccess('');
+    setSuccess(location.state?.notice ?? '');
     clearError();
-  }, [mode, clearError]);
+  }, [mode, clearError, location.state?.notice]);
 
   function updateField(event) {
     const { name, value } = event.target;

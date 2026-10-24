@@ -2,8 +2,7 @@ import { createContext, useCallback, useEffect, useMemo, useRef, useState } from
 import * as postService from '../services/postService.js';
 import * as commentService from '../services/commentService.js';
 import * as creatorService from '../services/creatorService.js';
-import { toggleRepost as toggleRepostRequest } from '../services/postService.js';
-import { postsApiEnabled } from '../services/postService.js';
+import { postsApiEnabled, toggleRepost as toggleRepostRequest } from '../services/postService.js';
 import { useAuth } from './AuthContext.jsx';
 
 export const PostContext = createContext(null);
@@ -145,7 +144,7 @@ export function PostProvider({ children }) {
 
   const deletePost = useCallback(async (postId) => {
     const existing = posts.find((post) => post.id === postId);
-    await postService.deletePost(postId);
+    const result = await postService.deletePost(postId);
     setPosts((prev) => prev.filter((p) => p.id !== postId));
     setComments((prev) => prev.filter((c) => c.postId !== postId));
     setLikedList((prev) => prev.filter((id) => id !== postId));
@@ -153,6 +152,7 @@ export function PostProvider({ children }) {
       ...previous,
       total: Math.max(0, previous.total - 1 - (existing?.repostsCount ?? 0)),
     } : previous);
+    return result;
   }, [posts]);
 
   const toggleLike = useCallback(async (postId) => {

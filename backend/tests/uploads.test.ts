@@ -59,6 +59,7 @@ function createStorage(configured = true, fail = false): ImageStorage & { calls:
       return { uploadId, url: `https://res.cloudinary.com/test/image/upload/${uploadId}.jpg` };
     },
     async verifyOwned(owner, uploadId) { return owner === userId && Boolean(uploadId); },
+    async deleteAsset() {},
   };
 }
 
@@ -168,6 +169,33 @@ test('image upload validates image bytes and returns a safe upload result', asyn
     assert.equal(result.asset.type, 'image');
     assert.ok(result.asset.url.startsWith('https://'));
     assert.equal(storage.calls.length, 1);
+  } finally {
+    await app.close();
+  }
+});
+
+test('image uploads are rate-limited per authenticated user', async () => {
+  const storage = createStorage();
+  const app = await startApp(storage);
+  try {
+    const auth = await authenticate(app.baseUrl);
+    let lastResponse: Response | undefined;
+    for (let attempt = 0; attempt < 21; attempt += 1) {
+      lastResponse = await fetch(`${app.baseUrl}/api/uploads/images`, {
+        method: 'POST',
+        headers: {
+          origin,
+          cookie: auth.cookie,
+          'x-csrf-token': auth.csrfToken,
+          'idempotency-key': randomUUID(),
+        },
+        body: imageForm(),
+      });
+    }
+
+    assert.equal(lastResponse?.status, 429);
+    assert.ok(Number(lastResponse?.headers.get('retry-after')) > 0);
+    assert.equal(storage.calls.length, 20);
   } finally {
     await app.close();
   }

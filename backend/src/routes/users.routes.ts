@@ -17,6 +17,36 @@ export function createUsersRouter(
   const requireCsrf = createCsrfProtection(allowedOrigins);
 
   if (follows) {
+    router.get('/recommendations', requireAuthenticated, async (request, response, next) => {
+      const pagination = parsePagination(request.query.page, request.query.limit);
+      if (!pagination) {
+        response.status(400).json({
+          status: 'error',
+          message: `page must be a positive integer and limit must be between 1 and ${MAX_PAGE_SIZE}.`,
+        });
+        return;
+      }
+      try {
+        const result = await follows.getRecommendations(
+          request.session.userId!,
+          pagination.pageSize,
+          (pagination.page - 1) * pagination.pageSize,
+        );
+        response.status(200).json({
+          status: 'ok',
+          creators: result.creators,
+          pagination: {
+            page: pagination.page,
+            pageSize: pagination.pageSize,
+            total: result.total,
+            totalPages: Math.ceil(result.total / pagination.pageSize),
+          },
+        });
+      } catch (error) {
+        next(error);
+      }
+    });
+
     router.get('/:username/follow-status', async (request, response, next) => {
       const username = normalizeUsername(request.params.username);
       if (!username) {
@@ -52,8 +82,8 @@ export function createUsersRouter(
         }
         try {
           const result = direction === 'followers'
-            ? await follows.listFollowers(username, pagination.pageSize, (pagination.page - 1) * pagination.pageSize)
-            : await follows.listFollowing(username, pagination.pageSize, (pagination.page - 1) * pagination.pageSize);
+            ? await follows.listFollowers(username, pagination.pageSize, (pagination.page - 1) * pagination.pageSize, request.session.userId ?? null)
+            : await follows.listFollowing(username, pagination.pageSize, (pagination.page - 1) * pagination.pageSize, request.session.userId ?? null);
           if (!result) {
             response.status(404).json({ status: 'error', message: 'User not found' });
             return;
@@ -142,12 +172,14 @@ export function createUsersRouter(
         response.status(404).json({ status: 'error', message: 'User not found' });
         return;
       }
-      const total = await users.countPublicPosts(username);
-      const posts = await users.listPublicPosts(
-        username,
-        pagination.pageSize,
-        (pagination.page - 1) * pagination.pageSize,
-      );
+      const [total, posts] = await Promise.all([
+        users.countPublicPosts(username),
+        users.listPublicPosts(
+          username,
+          pagination.pageSize,
+          (pagination.page - 1) * pagination.pageSize,
+        ),
+      ]);
       response.status(200).json({
         status: 'ok',
         posts,

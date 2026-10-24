@@ -97,7 +97,11 @@ function createPosts(): PostRepository {
     async listInspiredWorks() { return []; },
     async create() { return post; },
     async update() { return null; },
-    async delete() { return false; },
+    async delete() { return { deleted: false, cleanupPublicIds: [], unresolvedMediaUrls: [] }; },
+    async completeMediaCleanup() {},
+    async recordMediaCleanupFailure() {},
+    async listPendingMediaCleanup() { return []; },
+    async listUnresolvedMediaCleanup() { return []; },
   };
 }
 

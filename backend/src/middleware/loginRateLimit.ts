@@ -11,6 +11,7 @@ interface LoginRateLimitOptions {
   windowMs?: number;
   maxAttempts?: number;
   maxEntries?: number;
+  keyByIp?: boolean;
   now?: () => number;
 }
 
@@ -20,23 +21,19 @@ export function createLoginRateLimiter(
   const windowMs = options.windowMs ?? 15 * 60 * 1000;
   const maxAttempts = options.maxAttempts ?? 5;
   const maxEntries = options.maxEntries ?? 10_000;
+  const keyByIp = options.keyByIp ?? false;
   const now = options.now ?? Date.now;
   const attempts = new Map<string, LoginAttemptWindow>();
 
   return (request, response, next) => {
+    const ip = request.ip ?? 'unknown';
     const identifier = typeof request.body?.identifier === 'string'
       ? request.body.identifier.trim().toLowerCase()
       : '';
     const key = createHash('sha256')
-      .update(`${request.ip ?? 'unknown'}\0${identifier}`)
+      .update(keyByIp ? ip : `${ip}\0${identifier}`)
       .digest('hex');
     const currentTime = now();
-
-    for (const [entryKey, entry] of attempts) {
-      if (entry.inFlight === 0 && currentTime - entry.startedAt >= windowMs) {
-        attempts.delete(entryKey);
-      }
-    }
 
     let current = attempts.get(key);
     if (current && currentTime - current.startedAt >= windowMs) {

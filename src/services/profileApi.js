@@ -48,3 +48,8 @@ export async function unfollowCreator(username) {
     headers: { 'X-CSRF-Token': csrfToken },
   });
 }
+
+export async function getRecommendations(page = 1, limit = 10) {
+  const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+  return apiRequest(`/api/users/recommendations?${query}`);
+}

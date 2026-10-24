@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Heart, MessageCircle, Pencil, Plus, Repeat2, SearchX, Trash2 } from 'lucide-react';
 import ArtworkImage from '../components/common/ArtworkImage.jsx';
+import PostImageViewer from '../components/posts/PostImageViewer.jsx';
 import Avatar from '../components/common/Avatar.jsx';
 import EmptyState from '../components/common/EmptyState.jsx';
 import AuthenticityBadge from '../components/attribution/AuthenticityBadge.jsx';
 import AttributionLabel from '../components/attribution/AttributionLabel.jsx';
 import { usePosts } from '../hooks/usePosts.js';
 import { getCategoryLabel } from '../data/categories.js';
-import { CURRENT_USER_ID } from '../data/mockCreators.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { postsApiEnabled } from '../services/postService.js';
 import { cleanHandle, resolveAuthor } from '../utils/creators.js';
@@ -19,7 +19,8 @@ import '../styles/PostDetailsPage.css';
 export default function PostDetailsPage() {
   const { user } = useAuth();
   const { postId } = useParams();
-  const { hash } = useLocation();
+  const location = useLocation();
+  const { hash } = location;
   const navigate = useNavigate();
   const {
     status, postsById, creatorsById, commentsByPostId, likedIds, loadedCommentPosts,
@@ -31,6 +32,8 @@ export default function PostDetailsPage() {
   const [likeError, setLikeError] = useState('');
   const [repostError, setRepostError] = useState('');
   const [commentLoadError, setCommentLoadError] = useState('');
+  const [deletingCommentIds, setDeletingCommentIds] = useState(() => new Set());
+  const [commentDeleteErrors, setCommentDeleteErrors] = useState({});
   const [inspiredLoadError, setInspiredLoadError] = useState('');
   const [sending, setSending] = useState(false);
   const [liking, setLiking] = useState(false);
@@ -42,6 +45,8 @@ export default function PostDetailsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [inspiredWorks, setInspiredWorks] = useState([]);
+  const [imageViewerMedia, setImageViewerMedia] = useState(null);
+  const pendingCommentDeletes = useRef(new Set());
 
   const post = postsById.get(postId);
   const mediaItems = post?.mediaItems?.length
@@ -126,7 +131,7 @@ export default function PostDetailsPage() {
   const creator = creatorsById.get(post.creatorId);
   const handle = cleanHandle(creator);
   const liked = likedIds.has(post.id);
-  const isOwn = postsApiEnabled ? post.creatorId === user?.id : post.creatorId === CURRENT_USER_ID;
+  const isOwn = Boolean(user?.id && post.creatorId === user.id);
   const date = formatDate(post.createdAt, navigator.language);
 
   const submitComment = async (event) => {
@@ -141,6 +146,32 @@ export default function PostDetailsPage() {
       setError('Could not post your comment.');
     } finally {
       setSending(false);
+    }
+  };
+
+  const removeComment = async (commentId) => {
+    if (pendingCommentDeletes.current.has(commentId)) return;
+    pendingCommentDeletes.current.add(commentId);
+    setDeletingCommentIds((current) => new Set(current).add(commentId));
+    setCommentDeleteErrors((current) => {
+      const next = { ...current };
+      delete next[commentId];
+      return next;
+    });
+    try {
+      await deleteComment(post.id, commentId);
+    } catch (requestError) {
+      setCommentDeleteErrors((current) => ({
+        ...current,
+        [commentId]: requestError.message || 'Could not delete this comment. Please try again.',
+      }));
+    } finally {
+      pendingCommentDeletes.current.delete(commentId);
+      setDeletingCommentIds((current) => {
+        const next = new Set(current);
+        next.delete(commentId);
+        return next;
+      });
     }
   };
 
@@ -173,12 +204,19 @@ export default function PostDetailsPage() {
   const confirmDelete = async () => {
     setDeleting(true);
     try {
-      await deletePost(post.id);
-      navigate('/', { replace: true });
-    } catch {
+      const result = await deletePost(post.id);
+      navigate('/', {
+        replace: true,
+        state: {
+          notice: result?.cleanupPending
+            ? 'Your work was deleted, but its Cloudinary media cleanup is still pending.'
+            : 'Work deleted successfully.',
+        },
+      });
+    } catch (requestError) {
       setDeleting(false);
       setConfirming(false);
-      setError('Could not delete this work.');
+      setError(requestError.message || 'Could not delete this work. Please try again.');
     }
   };
 
@@ -196,7 +234,7 @@ export default function PostDetailsPage() {
               ? <video key={`${media.url}-${index}`} src={media.url} controls />
               : media.type === 'audio'
                 ? <audio key={`${media.url}-${index}`} src={media.url} controls />
-                : <ArtworkImage key={`${media.url}-${index}`} post={{ ...post, media }} />
+                : <button key={`${media.url}-${index}`} type="button" className="pd__image-open" aria-label={`View image for ${post.title}`} onClick={() => setImageViewerMedia(media)}><ArtworkImage post={{ ...post, media }} /></button>
           )) : <ArtworkImage post={post} />}
         </div>
 
@@ -251,7 +289,13 @@ export default function PostDetailsPage() {
 
           {isOwn && (
             <div className="pd__owner">
-              <Link to={`/post/${post.id}/edit`} className="outline-btn"><Pencil size={16} aria-hidden="true" /> Edit</Link>
+              <Link
+                to={`/post/${post.id}/edit`}
+                state={{ returnTo: `${location.pathname}${location.search}${location.hash}` }}
+                className="outline-btn"
+              >
+                <Pencil size={16} aria-hidden="true" /> Edit
+              </Link>
               <button type="button" className="outline-btn pd__delete" onClick={() => setConfirming(true)}>
                 <Trash2 size={16} aria-hidden="true" /> Delete
               </button>
@@ -290,15 +334,22 @@ export default function PostDetailsPage() {
                         : <strong>{name}</strong>}{' '}
                       {c.text}
                       <small className="muted"> · {formatDate(c.createdAt, navigator.language)}</small>
+                      {commentDeleteErrors[c.id] && (
+                        <small className="pd__comment-delete-error" role="alert">{commentDeleteErrors[c.id]}</small>
+                      )}
                     </p>
                     {user?.id === (c.userId ?? c.authorId) && (
-                      <button type="button" className="outline-btn" onClick={async () => {
-                        try {
-                          await deleteComment(post.id, c.id);
-                        } catch (requestError) {
-                          setCommentLoadError(requestError.message);
-                        }
-                      }}>Delete</button>
+                      <button
+                        type="button"
+                        className="comment-delete"
+                        onClick={() => removeComment(c.id)}
+                        disabled={deletingCommentIds.has(c.id)}
+                        aria-label={deletingCommentIds.has(c.id) ? 'Deleting comment' : `Delete comment by ${name}`}
+                        aria-busy={deletingCommentIds.has(c.id)}
+                        title={deletingCommentIds.has(c.id) ? 'Deleting comment…' : 'Delete comment'}
+                      >
+                        <Trash2 size={15} aria-hidden="true" />
+                      </button>
                     )}
                   </li>
                 );
@@ -319,6 +370,7 @@ export default function PostDetailsPage() {
           </section>
         </div>
       </article>
+      {imageViewerMedia && <PostImageViewer post={{ ...post, mediaItems: [imageViewerMedia] }} creator={creator} onClose={() => setImageViewerMedia(null)} />}
 
       {/* Inspired works */}
       <section className="pd__inspired" aria-labelledby="inspired-title">

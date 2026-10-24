@@ -1,6 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
 import { Home, Compass, PlusSquare, Bell, User, LogOut } from 'lucide-react';
-import { CURRENT_USER_ID } from '../../data/mockCreators.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const ITEMS = [
@@ -51,7 +50,6 @@ export function Sidebar() {
     <aside className="sidebar">
       <Link to="/" className="brand">Origin<span>Creativity</span></Link>
       <nav aria-label="Primary" className="sidebar__nav"><NavItems /></nav>
-      <p className="sidebar__note">Prototype. Data is mock and lives in this browser only.</p>
     </aside>
   );
 }

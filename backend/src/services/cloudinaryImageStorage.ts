@@ -12,6 +12,7 @@ export interface ImageStorage {
   readonly configured: boolean;
   upload(userId: string, uploadId: string, buffer: Buffer): Promise<UploadedImage>;
   verifyOwned(userId: string, uploadId: string, url: string): Promise<boolean>;
+  deleteAsset(publicId: string): Promise<void>;
 }
 
 const { cloudName, apiKey, apiSecret } = env.cloudinary;
@@ -21,7 +22,7 @@ if (configured) {
   cloudinary.v2.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret });
 }
 
-function publicIdFor(userId: string, uploadId: string) {
+export function cloudinaryPublicIdFor(userId: string, uploadId: string) {
   const scopedId = createHash('sha256').update(`${userId}:${uploadId}`).digest('hex');
   return `origin-creativity/${userId}/${scopedId}`;
 }
@@ -56,11 +57,21 @@ async function getExistingOwnedImage(publicId: string, userId: string, uploadId:
   return typeof url === 'string' && url.startsWith('https://') ? { uploadId, url } : null;
 }
 
+async function deleteCloudinaryImage(publicId: string) {
+  const result = await cloudinary.v2.uploader.destroy(publicId, {
+    resource_type: 'image',
+    invalidate: true,
+  });
+  if (result.result !== 'ok' && result.result !== 'not found') {
+    throw new Error(`Cloudinary image deletion returned ${result.result}.`);
+  }
+}
+
 export const cloudinaryImageStorage: ImageStorage = {
   configured,
   async upload(userId, uploadId, buffer) {
     if (!configured) throw new Error('Cloudinary is not configured.');
-    const publicId = publicIdFor(userId, uploadId);
+    const publicId = cloudinaryPublicIdFor(userId, uploadId);
     try {
       const result = await uploadToCloudinary(publicId, userId, uploadId, buffer);
       if (!result.secure_url.startsWith('https://')) throw new Error('Cloudinary did not return a secure URL.');
@@ -78,10 +89,14 @@ export const cloudinaryImageStorage: ImageStorage = {
   async verifyOwned(userId, uploadId, url) {
     if (!configured || !/^[0-9a-f-]{36}$/i.test(uploadId)) return false;
     try {
-      const existing = await getExistingOwnedImage(publicIdFor(userId, uploadId), userId, uploadId);
+      const existing = await getExistingOwnedImage(cloudinaryPublicIdFor(userId, uploadId), userId, uploadId);
       return existing?.url === url;
     } catch {
       return false;
     }
+  },
+  async deleteAsset(publicId) {
+    if (!configured) throw new Error('Cloudinary is not configured.');
+    await deleteCloudinaryImage(publicId);
   },
 };
