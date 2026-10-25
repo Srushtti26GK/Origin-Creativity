@@ -41,7 +41,7 @@ function ArcCarousel() {
   const spin = useRef(0);
   const hoverPaused = useRef(false);
   const manualPaused = useRef(false);
-  const [isPaused, setIsPaused] = useState(false);
+
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
