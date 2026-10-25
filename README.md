@@ -5,7 +5,7 @@ A creative community where every work tells a story: who made it, what inspired 
 
 Origin Creativity is built with React and Vite, with an Express, TypeScript, and PostgreSQL backend. Cloudinary provides image storage for API-backed uploads.
 
-When `VITE_API_BASE_URL` is configured, supported authentication, profile, post, social, notification, and upload operations use the backend. Without it, the application runs in demo mode with mock-backed posts and profiles. Backend-dependent social actions are disabled rather than simulated with fake counts.
+When `VITE_API_BASE_URL` is configured, supported authentication, profile, post, social, notification, and upload operations use the backend.The primary application mode uses the real Express API and PostgreSQL data, with Cloudinary for API-backed image uploads.
 
 ## Features
 
@@ -15,7 +15,7 @@ When `VITE_API_BASE_URL` is configured, supported authentication, profile, post,
 - Likes and comments backed by the API when configured.
 - Search, filtering, and sorting on `/explore`, with filters preserved in the URL.
 - Creator profiles, profile editing, follower relationships, and paginated profile posts.
-- Responsive navigation with a desktop sidebar and mobile bottom navigation.
+- Responsive navigation with a desktop and mobile bottom navigation.
 
 ### Origin features
 - **Create From This:** create a new work inspired by an existing post.
@@ -83,9 +83,7 @@ Copy the root `.env.example` to `.env.local` and set:
 ```dotenv
 VITE_API_BASE_URL=http://localhost:4000
 ```
-
 Vite exposes this value through `src/services/apiConfig.js`. Restart the frontend after changing environment variables.
-
 If `VITE_API_BASE_URL` is unset, the application uses demo/mock mode for the supported mock-backed features.
 
 ### 4. Check and migrate the database
@@ -156,9 +154,9 @@ Implemented functionality includes:
 - Likes, comments, and reposts.
 - Recreation attribution and Inspired Works.
 - Notifications and read-status updates.
-- Password-reset token handling.
 
-The PostgreSQL schema includes users, server-managed sessions, posts, media, likes, comments, follows, reposts, notifications, and password-reset data as defined by the migrations.
+
+The PostgreSQL schema includes users, server-managed sessions, posts, media, likes, comments, follows, reposts and notifications as defined by the migrations.
 
 ### Environment and database notes
 
@@ -249,9 +247,6 @@ Post deletion transactionally removes the post and its associated likes, comment
 - Tracked Cloudinary assets are deleted or retained in a durable retry queue if cleanup fails.
 - Legacy assets without stored Cloudinary public IDs may require manual cleanup.
 
-### Password reset
-
-Password-reset tokens are time-limited and stored as hashes. Development reset links are restricted to loopback addresses. Email delivery requires additional configuration and must be verified before treating the flow as production-ready.
 
 ## Security and limitations
 
