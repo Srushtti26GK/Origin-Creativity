@@ -36,5 +36,10 @@ export const router = createBrowserRouter([
       { path: '/profile/:creatorId', element: <ProfilePage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
+     
+    future: {
+      v7_startTransition: true,
+    },
+  
   },
 ]);

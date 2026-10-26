@@ -62,7 +62,7 @@ export default function ArtworkImage({
         sizes={srcSet ? resolvedSizes : undefined}
         alt={media?.alt || title || 'Artwork'}
         loading={priority ? 'eager' : 'lazy'}
-        fetchPriority={priority ? 'high' : 'auto'}
+        fetchpriority={priority ? 'high' : 'auto'}
         decoding="async"
         style={{
           display: 'block',
